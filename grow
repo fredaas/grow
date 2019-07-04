@@ -1,0 +1,305 @@
+#!/usr/bin/env python3
+
+import glob
+import os
+import sys
+import stat
+import argparse
+
+GLOBAL_SHOW_PERMS = False
+GLOBAL_SHOW_PATH = False
+GLOBAL_SHOW_SIZE = False
+GLOBAL_SEARCH_DEPTH = 20
+
+exclude_list = None
+
+class Node:
+    def __init__(self, name, level, index):
+        self.children = []
+        self.name = name.strip()
+        self.level = level
+        self.index = index
+        self.abspath = None
+        self.error = 0
+
+    def push(self, c):
+        self.children.append(c)
+
+def lspaces(s):
+    return (len(s) - len(s.lstrip()))
+
+def show_tree(root, m):
+    # If we're at the top virtual root, do nothing
+    if root.level != 0:
+        print(" " * (root.level - m), end = "")
+        if root.error == 0:
+            print(root.name)
+    for node in root.children:
+        show_tree(node, m)
+
+def plant_tree(root, m):
+    # If we're at the top virtual root, do nothing
+    if root.level != 0:
+        pass
+        # This is a file node
+        # if "." in root.name:
+            # try:
+                # open(root.abspath, "w")
+            # except:
+                # root.error = 1
+                # print("[INFO] Failed to create the file '{}'".format(root.name))
+        # This is directory node
+         # else:
+             # try:
+                 # os.makedirs(root.abspath)
+             # except:
+                 # root.error = 1
+                 # print("[INFO] Failed to create the directory '{}'".format(root.name))
+    for node in root.children:
+        plant_tree(node, m)
+
+def grow_tree(root, stream, j, n, m):
+    """
+Builds directory tree from the stream mounted at 'root'
+
+Parameters:
+
+    root
+
+        The root node.
+
+    j
+        The starting index of the candidate list.
+
+    stream
+
+        The candidate list.
+
+    n
+
+        Number of candidates in the list.
+
+    m
+
+        The valid indentation level.
+    """
+    for i in range(j, n):
+        name = stream[i]
+        level = lspaces(name) + m
+        if level == root.level:
+            break
+        elif level == root.level + m:
+            node = Node(name, level, i)
+            root.push(node)
+    for child in root.children:
+        grow_tree(child, stream, child.index + 1, n, m)
+
+def valid_indent(stream):
+    i = 0
+    m = None
+    for name in stream:
+        i += 1
+        lspace = len(name) - len(name.lstrip())
+        # First file cannot be indented
+        if i == 1 and lspace != 0:
+            return -1
+        # Save the indent of the first indented element in the stream
+        elif i > 1 and lspace > 0 and m is None:
+            m = lspace
+            break
+
+    # We have a flat directory structure
+    if m is None:
+        return 1
+
+    i = 0
+    for name in stream:
+        i += 1
+        lspace = len(name) - len(name.lstrip())
+        # Check for alternate indentation levels. Multiply by 2 to allow for
+        # single space/tabs indents.
+        if (lspace * 2) % (m * 2) != 0:
+            return -1
+    return m
+
+def parse_tree_input():
+    # Remove any trailing newlines before converting to array
+    stream = open("dir_structure.txt", "r")
+    stream = stream.read().rstrip().split("\n")
+
+    # stream = sys.stdin.read().rstrip().split("\n")
+
+    m = valid_indent(stream)
+
+    if m == -1:
+        print("[ERROR] Detected alternate indentation levels")
+        quit(1)
+
+    root = Node("root", 0, 0)
+    grow_tree(root, stream, 0, len(stream), m)
+    # plant_tree(root, m)
+    show_tree(root, m)
+
+def ascii_perms(file):
+    """
+Returns the system privileges for 'file'
+    """
+    _, oct_perms = oct(stat.S_IMODE(os.lstat(file).st_mode)).split("o")
+
+    bin_perms = ""
+    for digit in oct_perms:
+        bin_perms += "{:03b}".format(int(digit))
+
+    symbols = "rwx" * 3
+    ascii_perms = ""
+    for x, y in zip(bin_perms, symbols):
+        if x == "1":
+            ascii_perms += y
+        else:
+            ascii_perms += "-"
+
+    return ascii_perms
+
+def byte_order(file):
+    """
+Returns the size of 'file' along with its postfix
+    """
+    bytes = os.path.getsize(file)
+    if bytes > 1e+9 / 2:
+        return "{:1.f} {}".format(bytes / 1e+9, "GiB")
+    elif bytes > 1e+6 / 2:
+        return "{:1.f} {}".format(bytes / 1e+6, "MiB")
+    else:
+        return "{} {}".format(bytes, "Byte")
+
+def traverse_tree(root, level):
+    """
+Traverses 'root' in a DFS fashion
+    """
+    for file in glob.glob(os.path.join(root, "*"), recursive = False):
+        if level > GLOBAL_SEARCH_DEPTH - 1:
+            return
+
+        is_dir = os.path.isdir(file)
+        s = None
+
+
+        if GLOBAL_SHOW_PATH:
+            s = os.path.abspath(file)
+        else:
+            s = os.path.basename(file)
+
+        if GLOBAL_SHOW_PERMS:
+            if is_dir:
+                s = "d{} ".format(ascii_perms(s)) + s
+            else:
+                s = "-{} ".format(ascii_perms(s)) + s
+
+        if GLOBAL_SHOW_SIZE:
+            if not is_dir:
+                s = s + " {}".format(byte_order(file))
+
+        if not GLOBAL_SHOW_PATH:
+            print(" " * level * 4, end = "")
+
+        print(s)
+
+        # Do not expand directory if in excluded list
+        if exclude_list is not None:
+            basename = os.path.basename(s)
+            if basename in exclude_list:
+                return
+
+        if is_dir:
+            traverse_tree(file, level + 1)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "-d",
+        "--depth",
+        type = int,
+        required = False
+    )
+
+    parser.add_argument(
+        "-e",
+        "--exclude",
+        type = str,
+        required = False
+    )
+
+    parser.add_argument(
+        "-p",
+        "--permissions",
+        action = "store_true",
+        required = False
+    )
+
+    parser.add_argument(
+        "-a",
+        "--absolute",
+        action = "store_true",
+        required = False
+    )
+
+    parser.add_argument(
+        "-s",
+        "--size",
+        action = "store_true",
+        required = False
+    )
+
+    # Mutually exclusive
+    parser.add_argument(
+        "-c", 
+        "--create",
+        action = "store_true",
+        required = False
+    )
+
+    parser.add_argument(
+        "root",
+        nargs = "+"
+    )
+
+    argv = vars(parser.parse_args())
+
+    if argv["create"]:
+        parse_tree_input()
+        quit(0)
+
+    GLOBAL_SHOW_PERMS = argv.get("permissions")
+    GLOBAL_SHOW_PATH = argv.get("absolute")
+    GLOBAL_SHOW_SIZE = argv.get("size")
+
+    if argv.get("depth") is not None:
+        GLOBAL_SEARCH_DEPTH = argv.get("depth")
+
+    if argv.get("exclude") is not None:
+        exclude_list = argv.get("exclude").split(",")
+
+    files = argv.get("root")
+
+    for file in files:
+        is_dir = os.path.isdir(file)
+
+        s = file
+
+        if GLOBAL_SHOW_PATH:
+            s = os.path.abspath(file)
+
+        if GLOBAL_SHOW_PERMS:
+            if is_dir:
+                s = "d{} ".format(ascii_perms(file)) + s
+            else:
+                s = "-{} ".format(ascii_perms(file)) + s
+
+        if GLOBAL_SHOW_SIZE:
+            if not is_dir:
+                s = s + " {}".format(byte_order(file))
+
+        print(s)
+
+        traverse_tree(file, 1)
