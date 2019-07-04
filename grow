@@ -16,45 +16,85 @@ exclude_list = None
 class Node:
     def __init__(self, name, level, index):
         self.children = []
+        self.parents = []
         self.name = name.strip()
         self.level = level
         self.index = index
-        self.abspath = None
         self.error = 0
 
-    def push(self, c):
+    def push_parent(self, p):
+        self.parents += p
+
+    def push_child(self, c):
         self.children.append(c)
 
 def lspaces(s):
-    return (len(s) - len(s.lstrip()))
+    """
+Returns the number of leading spaces for 's'
+
+Parameters:
+
+    s
+
+        The string for which to compute the number of leading spaces.
+    """
+    return len(s) - len(s.lstrip())
 
 def show_tree(root, m):
-    # If we're at the top virtual root, do nothing
+    """
+Prints the AST representation of the directory tree
+
+Parameters:
+
+    root
+
+        The root node from which to start the search.
+
+    m
+
+        The indentation factor.
+    """
     if root.level != 0:
         print(" " * (root.level - m), end = "")
-        if root.error == 0:
-            print(root.name)
+        print("{} {}".format(root.name, "" if root.error == 0 else "[ERROR]"))
     for node in root.children:
         show_tree(node, m)
 
 def plant_tree(root, m):
-    # If we're at the top virtual root, do nothing
+    """
+Creates files and directories from the AST representation of the directory tree
+
+Parameters:
+
+    root
+
+        The root node from which to start the search.
+
+    m
+
+        The indentation factor.
+    """
     if root.level != 0:
-        pass
+        relpath = os.path.join(*root.parents, root.name)
         # This is a file node
-        # if "." in root.name:
-            # try:
-                # open(root.abspath, "w")
-            # except:
-                # root.error = 1
-                # print("[INFO] Failed to create the file '{}'".format(root.name))
+        if "." in root.name:
+            try:
+                abspath = os.path.abspath(relpath)
+                open(abspath, "w")
+            except:
+                root.error = 1
+                print("[INFO] Failed to create the file '{}'".format(relpath))
         # This is directory node
-         # else:
-             # try:
-                 # os.makedirs(root.abspath)
-             # except:
-                 # root.error = 1
-                 # print("[INFO] Failed to create the directory '{}'".format(root.name))
+        else:
+            try:
+                abspath = os.path.abspath(
+                    os.path.join(*root.parents, root.name))
+                os.makedirs(abspath)
+            except:
+                root.error = 1
+                print("[INFO] Failed to create the directory '{}'" \
+                    .format(relpath))
+
     for node in root.children:
         plant_tree(node, m)
 
@@ -81,7 +121,7 @@ Parameters:
 
     m
 
-        The valid indentation level.
+        The indentation factor.
     """
     for i in range(j, n):
         name = stream[i]
@@ -90,11 +130,21 @@ Parameters:
             break
         elif level == root.level + m:
             node = Node(name, level, i)
-            root.push(node)
+            if root.level > 0:
+                node.push_parent(root.parents + [root.name])
+            root.push_child(node)
     for child in root.children:
         grow_tree(child, stream, child.index + 1, n, m)
 
 def valid_indent(stream):
+    """
+Detects and validates the indentations levels of the input stream
+
+-1 is returned if alternate indentation levels are detected. Otherwise the
+indentation level of the first indented element in the stream is returned. If
+the stream represents a flat directory structure, the indentation level is set
+to 1.
+    """
     i = 0
     m = None
     for name in stream:
@@ -123,11 +173,11 @@ def valid_indent(stream):
     return m
 
 def parse_tree_input():
-    # Remove any trailing newlines before converting to array
-    stream = open("dir_structure.txt", "r")
-    stream = stream.read().rstrip().split("\n")
-
-    # stream = sys.stdin.read().rstrip().split("\n")
+    """
+Builds an AST from the grammar given through stdin, and creates files and
+directories corresponding to those nodes
+    """
+    stream = sys.stdin.read().rstrip().split("\n")
 
     m = valid_indent(stream)
 
@@ -137,12 +187,23 @@ def parse_tree_input():
 
     root = Node("root", 0, 0)
     grow_tree(root, stream, 0, len(stream), m)
-    # plant_tree(root, m)
+    plant_tree(root, m)
+
+    print("[INFO] Created directory tree:")
+
     show_tree(root, m)
 
 def ascii_perms(file):
     """
-Returns the system privileges for 'file'
+Returns the system privileges for 'file' in standard POSIX form, e.g.
+
+    rw-r-x-wx
+
+Parameters:
+
+    file
+
+        Absolute or relative path of the file to generate permissions for
     """
     _, oct_perms = oct(stat.S_IMODE(os.lstat(file).st_mode)).split("o")
 
@@ -163,6 +224,10 @@ Returns the system privileges for 'file'
 def byte_order(file):
     """
 Returns the size of 'file' along with its postfix
+
+    file
+
+        Absolute or relative path of the file to generate permissions for
     """
     bytes = os.path.getsize(file)
     if bytes > 1e+9 / 2:
@@ -172,17 +237,26 @@ Returns the size of 'file' along with its postfix
     else:
         return "{} {}".format(bytes, "Byte")
 
-def traverse_tree(root, level):
+def traverse_tree(root, depth):
     """
-Traverses 'root' in a DFS fashion
+Performs a depth-first search given an initial 'root' directory
+
+Parameters:
+
+    root
+
+        Top level directory from which to start the search.
+
+    depth
+
+        The maximum search depth.
     """
     for file in glob.glob(os.path.join(root, "*"), recursive = False):
-        if level > GLOBAL_SEARCH_DEPTH - 1:
+        if depth > GLOBAL_SEARCH_DEPTH - 1:
             return
 
         is_dir = os.path.isdir(file)
         s = None
-
 
         if GLOBAL_SHOW_PATH:
             s = os.path.abspath(file)
@@ -200,7 +274,7 @@ Traverses 'root' in a DFS fashion
                 s = s + " {}".format(byte_order(file))
 
         if not GLOBAL_SHOW_PATH:
-            print(" " * level * 4, end = "")
+            print(" " * depth * 4, end = "")
 
         print(s)
 
@@ -211,9 +285,12 @@ Traverses 'root' in a DFS fashion
                 return
 
         if is_dir:
-            traverse_tree(file, level + 1)
+            traverse_tree(file, depth + 1)
 
-if __name__ == "__main__":
+def init_argparse():
+    """
+Instantiates the argument parser
+    """
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
@@ -253,7 +330,7 @@ if __name__ == "__main__":
 
     # Mutually exclusive
     parser.add_argument(
-        "-c", 
+        "-c",
         "--create",
         action = "store_true",
         required = False
@@ -264,7 +341,10 @@ if __name__ == "__main__":
         nargs = "+"
     )
 
-    argv = vars(parser.parse_args())
+    return vars(parser.parse_args())
+
+if __name__ == "__main__":
+    argv = init_argparse()
 
     if argv["create"]:
         parse_tree_input()

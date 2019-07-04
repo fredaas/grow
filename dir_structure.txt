@@ -1,8 +1,0 @@
-a
-    b
-        c.txt
-    g
-        h.txt
-d
-    f.txt
-    h
