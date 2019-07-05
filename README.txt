@@ -33,11 +33,11 @@ EXAMPLE 2: BUILD DIRECTORIES
     To generate the directory structure from example 1, do
 
         $ cat << EOF | grow -c ./
-          >    a
-          >        b
-          >            c.txt
-          >            d.txt
-          >        e
-          >    g
-          >        h
+          > a
+          >     b
+          >         c.txt
+          >         d.txt
+          >     e
+          > g
+          >     h
           > EOF
