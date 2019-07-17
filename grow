@@ -328,7 +328,6 @@ Instantiates the argument parser
         required = False
     )
 
-    # Mutually exclusive
     parser.add_argument(
         "-c",
         "--create",
