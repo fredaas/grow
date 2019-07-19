@@ -362,7 +362,7 @@ if __name__ == "__main__":
     files = argv.get("root")
     
     if len(files) == 0:
-        files = [ "." ] 
+        files = glob.glob("*", recursive = False)
 
     for file in files:
         is_dir = os.path.isdir(file)
