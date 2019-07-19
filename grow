@@ -337,7 +337,7 @@ Instantiates the argument parser
 
     parser.add_argument(
         "root",
-        nargs = "+"
+        nargs = "*"
     )
 
     return vars(parser.parse_args())
@@ -360,6 +360,9 @@ if __name__ == "__main__":
         exclude_list = argv.get("exclude").split(",")
 
     files = argv.get("root")
+    
+    if len(files) == 0:
+        files = [ "." ] 
 
     for file in files:
         is_dir = os.path.isdir(file)
