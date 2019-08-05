@@ -231,9 +231,11 @@ Returns the size of 'file' along with its postfix
     """
     bytes = os.path.getsize(file)
     if bytes > 1e+9 / 2:
-        return "{:1.f} {}".format(bytes / 1e+9, "GiB")
+        return "{:.1f} {}".format(bytes / 1e+9, "GiB")
     elif bytes > 1e+6 / 2:
-        return "{:1.f} {}".format(bytes / 1e+6, "MiB")
+        return "{:.1f} {}".format(bytes / 1e+6, "MiB")
+    elif bytes > 1e+3 / 2:
+        return "{:.1f} {}".format(bytes / 1e+3, "KiB")
     else:
         return "{} {}".format(bytes, "Byte")
 
