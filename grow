@@ -13,8 +13,6 @@ GLOBAL_SEARCH_DEPTH = 20
 
 exclude_list = None
 
-search_pattern = ["*"]
-
 class Node:
     def __init__(self, name, level, index):
         self.children = []
@@ -29,21 +27,6 @@ class Node:
 
     def push_child(self, c):
         self.children.append(c)
-
-def get_files(d):
-    """
-Returns the number of files matching the global search pattern non-recursively.
-
-Parameters:
-
-    d
-
-        The current directory to search for files.
-    """
-    files = []
-    for file in search_pattern:
-        files.extend(glob.glob(file, recursive = False))
-    return files
 
 def lspaces(s):
     """
@@ -268,7 +251,7 @@ Parameters:
 
         The maximum search depth.
     """
-    for file in get_files(os.path.join(root, "*")):
+    for file in glob.glob(os.path.join(root, "*"), recursive = False):
         if depth > GLOBAL_SEARCH_DEPTH - 1:
             return
 
@@ -342,14 +325,6 @@ Instantiates the argument parser
         required = False
     )
 
-    # Include dotfiles in search
-    parser.add_argument(
-        "-a",
-        "--all",
-        action = "store_true",
-        required = False
-    )
-
     # Show file sizes
     parser.add_argument(
         "-s",
@@ -385,9 +360,6 @@ if __name__ == "__main__":
     GLOBAL_SHOW_PATH = argv.get("path")
     GLOBAL_SHOW_SIZE = argv.get("size")
 
-    if argv.get("all"):
-        search_pattern = ["*", ".*"]
-
     if argv.get("depth") is not None:
         GLOBAL_SEARCH_DEPTH = argv.get("depth")
 
@@ -397,7 +369,7 @@ if __name__ == "__main__":
     files = argv.get("root")
 
     if len(files) == 0:
-        files = get_files("*")
+        files = glob.glob("*", recursive = False)
 
     for file in files:
         is_dir = os.path.isdir(file)
