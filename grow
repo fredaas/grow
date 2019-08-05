@@ -13,6 +13,8 @@ GLOBAL_SEARCH_DEPTH = 20
 
 exclude_list = None
 
+search_pattern = ["*"]
+
 class Node:
     def __init__(self, name, level, index):
         self.children = []
@@ -27,6 +29,21 @@ class Node:
 
     def push_child(self, c):
         self.children.append(c)
+
+def get_files(d):
+    """
+Returns the number of files matching the global search pattern non-recursively.
+
+Parameters:
+
+    d
+
+        The current directory to search for files.
+    """
+    files = []
+    for file in search_pattern:
+        files.extend(glob.glob(file, recursive = False))
+    return files
 
 def lspaces(s):
     """
@@ -251,7 +268,7 @@ Parameters:
 
         The maximum search depth.
     """
-    for file in glob.glob(os.path.join(root, "*"), recursive = False):
+    for file in get_files(os.path.join(root, "*")):
         if depth > GLOBAL_SEARCH_DEPTH - 1:
             return
 
@@ -293,6 +310,7 @@ Instantiates the argument parser
     """
     parser = argparse.ArgumentParser()
 
+    # Maximum search depth
     parser.add_argument(
         "-d",
         "--depth",
@@ -300,6 +318,7 @@ Instantiates the argument parser
         required = False
     )
 
+    # Exclude files
     parser.add_argument(
         "-e",
         "--exclude",
@@ -307,20 +326,31 @@ Instantiates the argument parser
         required = False
     )
 
+    # Show file permissions
+    parser.add_argument(
+        "-r",
+        "--rights",
+        action = "store_true",
+        required = False
+    )
+
+    # Show absolute paths
     parser.add_argument(
         "-p",
-        "--permissions",
+        "--path",
         action = "store_true",
         required = False
     )
 
+    # Include dotfiles in search
     parser.add_argument(
         "-a",
-        "--absolute",
+        "--all",
         action = "store_true",
         required = False
     )
 
+    # Show file sizes
     parser.add_argument(
         "-s",
         "--size",
@@ -328,6 +358,7 @@ Instantiates the argument parser
         required = False
     )
 
+    # Create directory structure
     parser.add_argument(
         "-c",
         "--create",
@@ -335,6 +366,7 @@ Instantiates the argument parser
         required = False
     )
 
+    # Specify root directories
     parser.add_argument(
         "root",
         nargs = "*"
@@ -349,9 +381,12 @@ if __name__ == "__main__":
         parse_tree_input()
         quit(0)
 
-    GLOBAL_SHOW_PERMS = argv.get("permissions")
-    GLOBAL_SHOW_PATH = argv.get("absolute")
+    GLOBAL_SHOW_PERMS = argv.get("rights")
+    GLOBAL_SHOW_PATH = argv.get("path")
     GLOBAL_SHOW_SIZE = argv.get("size")
+
+    if argv.get("all"):
+        search_pattern = ["*", ".*"]
 
     if argv.get("depth") is not None:
         GLOBAL_SEARCH_DEPTH = argv.get("depth")
@@ -360,9 +395,9 @@ if __name__ == "__main__":
         exclude_list = argv.get("exclude").split(",")
 
     files = argv.get("root")
-    
+
     if len(files) == 0:
-        files = glob.glob("*", recursive = False)
+        files = get_files("*")
 
     for file in files:
         is_dir = os.path.isdir(file)
