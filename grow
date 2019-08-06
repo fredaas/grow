@@ -13,6 +13,8 @@ GLOBAL_SEARCH_DEPTH = 20
 
 exclude_list = None
 
+search_pattern = None
+
 class Node:
     def __init__(self, name, level, index):
         self.children = []
@@ -193,17 +195,30 @@ directories corresponding to those nodes
 
     show_tree(root, m)
 
+def get_files(dir):
+    """
+Returns the contents of 'dir' non-recursively
+
+Parameters:
+
+    dir
+
+        Directory to expand.
+    """
+    files = []
+    for target in search_pattern.format(dir).split(" "):
+        files.extend(glob.glob(target, recursive = False))
+    return files
+
 def ascii_perms(file):
     """
-Returns the system privileges for 'file' in standard POSIX form, e.g.
-
-    rw-r-x-wx
+Returns the system privileges for 'file' in standard POSIX form
 
 Parameters:
 
     file
 
-        Absolute or relative path of the file to generate permissions for
+        Path of the file to generate permissions for.
     """
     _, oct_perms = oct(stat.S_IMODE(os.lstat(file).st_mode)).split("o")
 
@@ -223,11 +238,11 @@ Parameters:
 
 def byte_order(file):
     """
-Returns the size of 'file' along with its postfix
+Returns the size of 'file' along with the size postfix
 
     file
 
-        Absolute or relative path of the file to generate permissions for
+        Path of the file to generate the size for.
     """
     bytes = os.path.getsize(file)
     if bytes > 1e+9 / 2:
@@ -238,6 +253,22 @@ Returns the size of 'file' along with its postfix
         return "{:.1f} {}".format(bytes / 1e+3, "KiB")
     else:
         return "{} {}".format(bytes, "Byte")
+
+def is_excluded(dir):
+    """
+Returns 'True' if 'dir' should be excluded from the search, otherwise 'False'
+
+Paramters:
+
+    dir
+
+        Name of the directory to check for exclusion.
+    """
+    if exclude_list is not None:
+        basename = os.path.basename(dir)
+        if basename in exclude_list:
+            return True
+    return False
 
 def traverse_tree(root, depth):
     """
@@ -253,7 +284,7 @@ Parameters:
 
         The maximum search depth.
     """
-    for file in glob.glob(os.path.join(root, "*"), recursive = False):
+    for file in get_files(root):
         if depth > GLOBAL_SEARCH_DEPTH - 1:
             return
 
@@ -280,11 +311,8 @@ Parameters:
 
         print(s)
 
-        # Do not expand directory if in excluded list
-        if exclude_list is not None:
-            basename = os.path.basename(s)
-            if basename in exclude_list:
-                return
+        if is_excluded(file):
+            return
 
         if is_dir:
             traverse_tree(file, depth + 1)
@@ -315,6 +343,14 @@ Instantiates the argument parser
     parser.add_argument(
         "-r",
         "--rights",
+        action = "store_true",
+        required = False
+    )
+
+    # Show file permissions
+    parser.add_argument(
+        "-a",
+        "--all",
         action = "store_true",
         required = False
     )
@@ -362,6 +398,11 @@ if __name__ == "__main__":
     GLOBAL_SHOW_PATH = argv.get("path")
     GLOBAL_SHOW_SIZE = argv.get("size")
 
+    if argv.get("all"):
+        search_pattern = "{0}/* {0}/.*"
+    else:
+        search_pattern = "{}/*"
+
     if argv.get("depth") is not None:
         GLOBAL_SEARCH_DEPTH = argv.get("depth")
 
@@ -371,7 +412,7 @@ if __name__ == "__main__":
     files = argv.get("root")
 
     if len(files) == 0:
-        files = glob.glob("*", recursive = False)
+        files = get_files(".")
 
     for file in files:
         is_dir = os.path.isdir(file)
@@ -380,6 +421,8 @@ if __name__ == "__main__":
 
         if GLOBAL_SHOW_PATH:
             s = os.path.abspath(file)
+        else:
+            s = os.path.basename(file)
 
         if GLOBAL_SHOW_PERMS:
             if is_dir:
@@ -392,5 +435,8 @@ if __name__ == "__main__":
                 s = s + " {}".format(byte_order(file))
 
         print(s)
+
+        if is_excluded(file):
+            continue
 
         traverse_tree(file, 1)
