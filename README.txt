@@ -15,14 +15,13 @@ EXAMPLE 1: CRAWL DIRECTORIES
 
     Given the directory structure:
 
-        ./
-            a
-                b
-                    c.txt
-                    d.txt
-                e
-            g
-                h
+        a
+            b
+                c.txt
+                d.txt
+            e
+        g
+            h
 
     To recursively traverse the root directory and display all the files along
     the way, do:
@@ -33,7 +32,7 @@ EXAMPLE 2: BUILD DIRECTORIES
 
     To generate the directory structure from example 1, do
 
-        $ cat << EOF | grow -c ./
+        $ cat << EOF | grow -c
         > a
         >     b
         >         c.txt
