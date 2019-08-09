@@ -20,8 +20,8 @@ EXAMPLE 1: CRAWL DIRECTORIES
                 c.txt
                 d.txt
             e
-        g
-            h
+        f
+            g
 
     To recursively traverse the root directory and display all the files along
     the way, do:
@@ -38,8 +38,8 @@ EXAMPLE 2: BUILD DIRECTORIES
         >         c.txt
         >         d.txt
         >     e
-        > g
-        >     h
+        > f
+        >     g
         > EOF
 
     Note that grow uses the indent of the first child node, in this case 'b', to
