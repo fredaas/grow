@@ -298,9 +298,9 @@ Parameters:
 
         if GLOBAL_SHOW_PERMS:
             if is_dir:
-                s = "d{} ".format(ascii_perms(s)) + s
+                s = "d{} ".format(ascii_perms(os.path.abspath(file))) + s
             else:
-                s = "-{} ".format(ascii_perms(s)) + s
+                s = "-{} ".format(ascii_perms(os.path.abspath(file))) + s
 
         if GLOBAL_SHOW_SIZE:
             if not is_dir:
@@ -426,9 +426,9 @@ if __name__ == "__main__":
 
         if GLOBAL_SHOW_PERMS:
             if is_dir:
-                s = "d{} ".format(ascii_perms(file)) + s
+                s = "d{} ".format(ascii_perms(os.path.abspath(file))) + s
             else:
-                s = "-{} ".format(ascii_perms(file)) + s
+                s = "-{} ".format(ascii_perms(os.path.abspath(file))) + s
 
         if GLOBAL_SHOW_SIZE:
             if not is_dir:
