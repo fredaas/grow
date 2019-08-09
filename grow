@@ -410,10 +410,12 @@ if __name__ == "__main__":
     if argv.get("exclude") is not None:
         exclude_list = argv.get("exclude").split(",")
 
-    files = [ re.sub('[\\/( )+$]', '', argv.get("root")[0]) ]
+    files = argv.get("root")
 
     if len(files) == 0:
         files = get_files(".")
+    else:
+        files = [ re.sub('[\\/( )+$]', '', x) for x in files ]
 
     for file in files:
         is_dir = os.path.isdir(file)
