@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import glob
+import re
 import os
 import sys
 import stat
@@ -409,15 +410,14 @@ if __name__ == "__main__":
     if argv.get("exclude") is not None:
         exclude_list = argv.get("exclude").split(",")
 
-    files = argv.get("root")
+    files = [ re.sub('[\\/( )+$]', '', argv.get("root")[0]) ]
 
     if len(files) == 0:
         files = get_files(".")
 
     for file in files:
         is_dir = os.path.isdir(file)
-
-        s = file
+        s = None
 
         if GLOBAL_SHOW_PATH:
             s = os.path.abspath(file)
