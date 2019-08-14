@@ -47,3 +47,9 @@ EXAMPLE 2: BUILD DIRECTORIES
     inconsistent, grow will abort and tell you to fix your indentation levels.
     The indentation width can be any integer greater than zero. Both spaces and
     tabs are allowed.
+
+FEATURE REQUEST
+--------------------------------------------------------------------------------
+
+Add option to "grep" for files and directories while searching, and report
+absolute path or relative path if found.
