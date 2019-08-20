@@ -223,7 +223,7 @@ Parameters:
 
         Path of the file to generate permissions for.
     """
-    _, oct_perms = oct(stat.S_IMODE(os.lstat(file).st_mode)).split("o")
+    oct_perms = oct(stat.S_IMODE(os.lstat(file).st_mode)).split("o")
 
     bin_perms = ""
     for digit in oct_perms:
