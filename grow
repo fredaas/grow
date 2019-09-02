@@ -246,11 +246,11 @@ Returns the size of 'file' along with the size postfix
         Path of the file to generate the size for.
     """
     bytes = os.path.getsize(file)
-    if bytes > 1e+9 / 2:
+    if bytes > 1e+9:
         return "{:.1f} {}".format(bytes / 1e+9, "GiB")
-    elif bytes > 1e+6 / 2:
+    elif bytes > 1e+6:
         return "{:.1f} {}".format(bytes / 1e+6, "MiB")
-    elif bytes > 1e+3 / 2:
+    elif bytes > 1e+3:
         return "{:.1f} {}".format(bytes / 1e+3, "KiB")
     else:
         return "{} {}".format(bytes, "Byte")
