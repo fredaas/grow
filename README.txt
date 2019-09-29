@@ -34,7 +34,7 @@ external dependencies.
 EXAMPLE 1: CRAWL DIRECTORY TREES
 --------------------------------------------------------------------------------
 
-    Given the following directory structure:
+   Consider the following directory structure:
 
         a
             b
