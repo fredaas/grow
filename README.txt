@@ -1,19 +1,40 @@
 GROW
 --------------------------------------------------------------------------------
 
-A directory-tree crawler.
+Grow is a directory-tree crawler.
 
 USAGE
 --------------------------------------------------------------------------------
 
     $ grow -h
 
-EXAMPLES
+FEATURES
 --------------------------------------------------------------------------------
 
-EXAMPLE 1: CRAWL DIRECTORIES
+The main idea of grow is to provide a tool that efficiently visualizes
+directory-tree structures from the command line. Additionally, grow can
 
-    Given the directory structure:
+    - display file permissions,
+
+    - display absolute paths,
+
+    - display file sizes,
+
+    - display dotfiles,
+
+    - search multiple root directories,
+
+    - exclude files from search, and
+
+    - create directory structures.
+
+Grow is written in Python 3, is self-contained in a single file, and has no
+external dependencies.
+
+EXAMPLE 1: CRAWL DIRECTORY TREES
+--------------------------------------------------------------------------------
+
+    Given the following directory structure:
 
         a
             b
@@ -23,14 +44,20 @@ EXAMPLE 1: CRAWL DIRECTORIES
         f
             g
 
-    To recursively traverse the root directory and display all the files along
-    the way, do:
+    The directory structure can be printed to stdout by invoking grow from the
+    root directory:
 
         $ grow
 
-EXAMPLE 2: BUILD DIRECTORIES
+    Or, equivalently:
 
-    To generate the directory structure from example 1, do
+        $ grow *
+
+EXAMPLE 2: CREATE DIRECTORY TREES
+--------------------------------------------------------------------------------
+
+    To create the directory structure from example 1 you can pipe a textual
+    representation of the directory structure to grow using the --create (-c) flag:
 
         $ cat << EOF | grow -c
         > a
@@ -42,7 +69,7 @@ EXAMPLE 2: BUILD DIRECTORIES
         >     g
         > EOF
 
-    Note that grow uses the indent of the first child node, in this case 'b', to
+    Note: Grow uses the indent of the first child node, in this case 'b', to
     verify the indentation of subsequent child nodes. If the indentation is
     inconsistent, grow will abort and tell you to fix your indentation levels.
     The indentation width can be any integer greater than zero. Both spaces and
