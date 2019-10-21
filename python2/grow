@@ -320,7 +320,10 @@ Parameters:
 
         if GLOBAL_SHOW_SIZE:
             if not is_dir:
-                s = s + " {}".format(byte_order(os.stat(file).st_size))
+                try:
+                    s = s + " {}".format(byte_order(os.stat(file).st_size))
+                except OSError:
+                    pass
 
         if not GLOBAL_SHOW_PATH:
             print(" " * depth * 4, end = "")
@@ -360,7 +363,10 @@ Parameters:
             traverse_tree_info(file, depth + 1)
         else:
             info_num_files += 1
-            info_size += os.stat(file).st_size
+            try:
+                info_size += os.stat(file).st_size
+            except OSError:
+                pass
 
 def init_argparse():
     """
@@ -509,7 +515,10 @@ if __name__ == "__main__":
 
         if GLOBAL_SHOW_SIZE:
             if not is_dir:
-                s = s + " {}".format(byte_order(os.stat(file).st_size))
+                try:
+                    s = s + " {}".format(byte_order(os.stat(file).st_size))
+                except OSError:
+                    pass
 
         print(s)
 
