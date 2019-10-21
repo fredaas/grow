@@ -368,6 +368,7 @@ Instantiates the argument parser
     """
     parser = argparse.ArgumentParser()
 
+    # Report directory information
     parser.add_argument(
         "-i",
         "--info-report",
