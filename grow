@@ -474,7 +474,7 @@ if __name__ == "__main__":
     else:
         files = [ re.sub('[\\/( )+$]', '', x) for x in files ]
 
-    if argv.get("report_depth"):
+    if argv.get("info_report"):
         print("REPORT [depth, files, size]:\n")
 
         for file in files:
