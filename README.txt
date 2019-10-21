@@ -64,6 +64,7 @@ EXAMPLE 2: CREATE DIRECTORY TREES
 EXAMPLE 3: DERIVE DIRECTORY INFORMATION
 --------------------------------------------------------------------------------
 
-    Grow can gather information about depth, content, and size, using the --info-report flag:
+    Grow can gather information about the depth, content, and size of a
+    directory using the --info-report flag:
 
         $ grow -i
