@@ -1,7 +1,7 @@
 GROW
 --------------------------------------------------------------------------------
 
-Grow is a directory-tree crawler.
+Grow is a directory-tree parser.
 
 USAGE
 --------------------------------------------------------------------------------
@@ -11,14 +11,16 @@ USAGE
 FEATURES
 --------------------------------------------------------------------------------
 
-The main idea of grow is to provide a tool that efficiently visualizes
-directory-tree structures from the command line. Additionally, grow can
+The main idea of Grow is to provide a tool that efficiently visualizes
+directory-tree structures from the command line. Additionally, Grow can
 
     - display file permissions,
 
     - display absolute paths,
 
     - display file sizes,
+
+    - display directory sizes,
 
     - display dotfiles,
 
@@ -29,23 +31,13 @@ directory-tree structures from the command line. Additionally, grow can
     - create directory structures.
 
 Grow is written in Python 3, is self-contained in a single file, and has no
-external dependencies.
+external dependencies. A Python 2 version is also available.
 
 EXAMPLE 1: CRAWL DIRECTORY TREES
 --------------------------------------------------------------------------------
 
-   Consider the following directory structure:
-
-        a
-            b
-                c.txt
-                d.txt
-            e
-        f
-            g
-
-    The directory structure can be printed to stdout by invoking grow from the
-    root directory:
+    Grow can print a directory-tree structures by invoking it from the current
+    directory:
 
         $ grow
 
@@ -56,8 +48,8 @@ EXAMPLE 1: CRAWL DIRECTORY TREES
 EXAMPLE 2: CREATE DIRECTORY TREES
 --------------------------------------------------------------------------------
 
-    To create the directory structure from example 1 you can pipe a textual
-    representation of the directory structure to grow using the --create (-c) flag:
+    Grow can create a directory-tree structures from AST representations using
+    the --create flag:
 
         $ cat << EOF | grow -c
         > a
@@ -69,8 +61,9 @@ EXAMPLE 2: CREATE DIRECTORY TREES
         >     g
         > EOF
 
-    Note: Grow uses the indent of the first child node, in this case 'b', to
-    verify the indentation of subsequent child nodes. If the indentation is
-    inconsistent, grow will abort and tell you to fix your indentation levels.
-    The indentation width can be any integer greater than zero. Both spaces and
-    tabs are allowed.
+EXAMPLE 3: DERIVE DIRECTORY INFORMATION
+--------------------------------------------------------------------------------
+
+    Grow can gather information about depth, content, and size, using the --info-report flag:
+
+        $ grow -i
