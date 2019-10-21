@@ -366,6 +366,7 @@ Instantiates the argument parser
     """
     parser = argparse.ArgumentParser()
 
+    # Report directory information
     parser.add_argument(
         "-i",
         "--info-report",
@@ -436,7 +437,6 @@ Instantiates the argument parser
     )
 
     return vars(parser.parse_args())
-
 
 if __name__ == "__main__":
     argv = init_argparse()
