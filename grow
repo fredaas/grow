@@ -272,7 +272,7 @@ def is_excluded(dir):
     """
 Returns 'True' if 'dir' should be excluded from the search, otherwise 'False'
 
-Paramters:
+Parameters:
 
     dir
 
