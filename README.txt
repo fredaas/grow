@@ -52,7 +52,7 @@ EXAMPLE 2: CREATE DIRECTORY TREES
 --------------------------------------------------------------------------------
 
     Grow can create directory-tree structures from AST representations using
-    the --create flag:
+    the --create (-c) flag:
 
         $ cat << EOF | grow -c
         > a
@@ -68,6 +68,6 @@ EXAMPLE 3: DERIVE DIRECTORY INFORMATION
 --------------------------------------------------------------------------------
 
     Grow can gather information about the depth, content, and size of directory
-    structures using the --info-report flag:
+    structures using the --info (-i) flag:
 
         $ grow -i
