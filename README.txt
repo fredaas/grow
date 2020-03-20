@@ -34,7 +34,7 @@ can
     - create directory structures.
 
 Grow is written in Python 3, is self-contained in a single file, and has no
-external dependencies. A Python 2 version is also available.
+external dependencies.
 
 EXAMPLE 1: CRAWL DIRECTORY TREES
 --------------------------------------------------------------------------------
