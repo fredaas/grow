@@ -12,6 +12,7 @@ GLOBAL_SHOW_PERMS   = False
 GLOBAL_SHOW_PATH    = False
 GLOBAL_SHOW_SIZE    = False
 GLOBAL_SEARCH_DEPTH = 20
+GLOBAL_HIDE_DIRS    = False
 
 info_max_depth = 1
 info_num_files = 0
@@ -323,10 +324,12 @@ Parameters:
                 except OSError:
                     pass
 
-        if not GLOBAL_SHOW_PATH:
-            print(" " * depth * 4, end = "")
-
-        print(s)
+        if is_dir and GLOBAL_HIDE_DIRS:
+            pass
+        else:
+            if not GLOBAL_SHOW_PATH and not GLOBAL_HIDE_DIRS:
+                print(" " * depth * 4, end = "")
+            print(s)
 
         if is_excluded(file):
             return
@@ -388,6 +391,14 @@ Instantiates the argument parser
         required = False
     )
 
+    # Exclude directories from output
+    parser.add_argument(
+        "-f",
+        "--files",
+        action = "store_true",
+        required = False
+    )
+
     # Exclude files
     parser.add_argument(
         "-e",
@@ -404,7 +415,7 @@ Instantiates the argument parser
         required = False
     )
 
-    # Show file permissions
+    # Include dotfiles in search
     parser.add_argument(
         "-a",
         "--all",
@@ -412,7 +423,7 @@ Instantiates the argument parser
         required = False
     )
 
-    # Show absolute paths
+    # Expand basenames to absolute path
     parser.add_argument(
         "-p",
         "--path",
@@ -455,6 +466,10 @@ if __name__ == "__main__":
     GLOBAL_SHOW_PATH = argv.get("path")
     GLOBAL_SHOW_SIZE = argv.get("size")
     GLOBAL_REPORT_DEPTH = argv.get("info_report")
+    GLOBAL_HIDE_DIRS = argv.get("files")
+
+    # Show absolute path when only showing files
+    # GLOBAL_SHOW_PATH = GLOBAL_HIDE_DIRS
 
     if argv.get("all"):
         search_pattern = "{0}/* {0}/.*"
@@ -496,6 +511,9 @@ if __name__ == "__main__":
 
         quit(0)
 
+    # TODO: Exclude options stops searching in dir after excluded file is found.
+    # Fix this.
+
     for file in files:
         is_dir = os.path.isdir(file)
         s = None
@@ -518,7 +536,10 @@ if __name__ == "__main__":
                 except OSError:
                     pass
 
-        print(s)
+        if is_dir and GLOBAL_HIDE_DIRS:
+            pass
+        else:
+            print(s)
 
         if is_excluded(file):
             continue
