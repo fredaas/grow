@@ -8,7 +8,6 @@ import stat
 import argparse
 
 GLOBAL_REPORT_DEPTH = False
-GLOBAL_SHOW_PERMS   = False
 GLOBAL_SHOW_PATH    = False
 GLOBAL_SHOW_SIZE    = False
 GLOBAL_SEARCH_DEPTH = 20
@@ -223,32 +222,6 @@ Parameters:
         files.extend(glob.glob(target, recursive = False))
     return files
 
-def ascii_perms(file):
-    """
-Returns the system privileges for 'file' in standard POSIX form
-
-Parameters:
-
-    file
-
-        Path of the file to generate permissions for.
-    """
-    _, oct_perms = oct(stat.S_IMODE(os.lstat(file).st_mode)).split("o")
-
-    bin_perms = ""
-    for digit in oct_perms:
-        bin_perms += "{:03b}".format(int(digit))
-
-    symbols = "rwx" * 3
-    ascii_perms = ""
-    for x, y in zip(bin_perms, symbols):
-        if x == "1":
-            ascii_perms += y
-        else:
-            ascii_perms += "-"
-
-    return ascii_perms
-
 def byte_order(bytes):
     """
 Converts the size of 'bytes' into an order of magnitude and returns the value as
@@ -310,12 +283,6 @@ Parameters:
             s = os.path.abspath(file)
         else:
             s = os.path.basename(file)
-
-        if GLOBAL_SHOW_PERMS:
-            if is_dir:
-                s = "d{} ".format(ascii_perms(os.path.abspath(file))) + s
-            else:
-                s = "-{} ".format(ascii_perms(os.path.abspath(file))) + s
 
         if GLOBAL_SHOW_SIZE:
             if not is_dir:
@@ -407,14 +374,6 @@ Instantiates the argument parser
         required = False
     )
 
-    # Show file permissions
-    parser.add_argument(
-        "-r",
-        "--rights",
-        action = "store_true",
-        required = False
-    )
-
     # Include dotfiles in search
     parser.add_argument(
         "-a",
@@ -462,7 +421,6 @@ if __name__ == "__main__":
         parse_tree_input()
         quit(0)
 
-    GLOBAL_SHOW_PERMS = argv.get("rights")
     GLOBAL_SHOW_PATH = argv.get("path")
     GLOBAL_SHOW_SIZE = argv.get("size")
     GLOBAL_REPORT_DEPTH = argv.get("info_report")
@@ -511,7 +469,7 @@ if __name__ == "__main__":
 
         quit(0)
 
-    # TODO: Exclude options stops searching in dir after excluded file is found.
+    # TODO: Exclude option stops searching in dir after excluded file is found.
     # Fix this.
 
     for file in files:
@@ -522,12 +480,6 @@ if __name__ == "__main__":
             s = os.path.abspath(file)
         else:
             s = os.path.basename(file)
-
-        if GLOBAL_SHOW_PERMS:
-            if is_dir:
-                s = "d{} ".format(ascii_perms(os.path.abspath(file))) + s
-            else:
-                s = "-{} ".format(ascii_perms(os.path.abspath(file))) + s
 
         if GLOBAL_SHOW_SIZE:
             if not is_dir:
