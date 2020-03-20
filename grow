@@ -147,9 +147,9 @@ def valid_indent(stream):
     Validates input-stream indentation levels
 
     -1 is returned if alternate indentation levels are detected. Otherwise the
-    indentation level of the first indented element in the stream is returned. If
-    the stream represents a flat directory structure, the indentation level is set
-    to 1.
+    indentation level of the first indented element in the stream is returned.
+    If the stream represents a flat directory structure, the indentation level
+    is set to 1.
 
     Parameters:
 
@@ -288,7 +288,8 @@ def traverse_tree(file, depth):
     if global_show_size:
         if not is_dir:
             try:
-                string = string + " {}".format(byte_order(os.stat(file).st_size))
+                string = string + " {}".format(
+                    byte_order(os.stat(file).st_size))
             except OSError:
                 pass
 
