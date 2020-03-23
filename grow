@@ -21,7 +21,7 @@ exclude_list = None
 
 search_pattern = None
 
-rightshift = 2
+rightshift = 4
 
 class Node:
     """
