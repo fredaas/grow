@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# TODO: Fix [Errno 32] Broken pipe:
+#
+# https://stackoverflow.com/questions/14207708/ioerror-errno-32-broken-pipe-python
+#
+
 import glob
 import re
 import os
@@ -238,7 +243,7 @@ def byte_order(bytes):
     else:
         return "{} {}".format(bytes, "Byte")
 
-def is_excluded(dir):
+def excluded(dir):
     """
     Returns 'True' if 'dir' should be excluded from search, otherwise 'False'
 
@@ -271,10 +276,6 @@ def traverse_tree(file, depth):
     if depth > global_search_depth:
         return
 
-    # Exclude file
-    if is_excluded(file):
-        return
-
     is_dir = os.path.isdir(file)
     string = None
 
@@ -299,7 +300,10 @@ def traverse_tree(file, depth):
     else:
         if not global_hide_dirs and not global_show_path:
             print(" " * depth * rightshift, end = "")
-        print(string)
+        print(string + "/" * is_dir)
+
+    if excluded(file):
+        return
 
     for file in sorted(get_files(file), key=str):
         if is_dir:
