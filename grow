@@ -224,7 +224,7 @@ def get_files(dir):
         files.extend(glob.glob(target, recursive = False))
     return files
 
-def byte_order(bytes):
+def usize(bytes):
     """
     Returns the unit size of 'bytes' as a string
 
@@ -290,7 +290,7 @@ def traverse_tree(file, depth):
         if not is_dir:
             try:
                 string = string + " {}".format(
-                    byte_order(os.stat(file).st_size))
+                    usize(os.stat(file).st_size))
             except OSError:
                 pass
 
@@ -368,7 +368,7 @@ def print_tree_info(files):
                 os.path.basename(file),
                 info_max_depth,
                 info_num_files,
-                byte_order(info_size)
+                usize(info_size)
             )
         )
 
