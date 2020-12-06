@@ -12,21 +12,26 @@ import sys
 import stat
 import argparse
 
-global_report_depth = False
 global_show_path    = False
 global_show_size    = False
 global_search_depth = 20
-global_hide_dirs    = False
 
 info_max_depth = 0
 info_num_files = 0
 info_size      = 0
 
-exclude_list = None
+exclude_list = []
 
 search_pattern = None
 
-rightshift = 4
+rshift = 4
+
+def indent_factor(s, indent):
+    i = 0
+    while s[i] == " ":
+        i += 1
+    return (int)(i / indent)
+
 
 class Node:
     """
@@ -69,8 +74,8 @@ def show_tree(root):
             Root node.
     """
     if root.depth != 0:
-        print(" " * (root.depth * rightshift - rightshift), end = "")
-        print("{} {}".format(root.name, "" if root.error == 0 else "[ERROR]"))
+        print(" " * ((root.depth - 1) * rshift), end = "")
+        print("{} {}".format(root.name, "" if root.error == 0 else "[FAILED]"))
     for node in root.children:
         show_tree(node)
 
@@ -137,10 +142,9 @@ def create_tree(root, stream, start, length, indent):
     """
     for i in range(start, length):
         next_name = stream[i]
-        next_depth = len(next_name) - len(next_name.lstrip()) + indent
-        if next_depth == root.depth + indent:
+        next_depth = indent_factor(next_name, indent) + 1
+        if next_depth == root.depth + 1:
             node = Node(next_name, next_depth, i)
-            # Don't include temporary root node
             if root.depth > 0:
                 node.push_parent(root.parents + [root.name])
             root.push_child(node)
@@ -204,9 +208,7 @@ def parse_tree_input():
     root = Node("root", 0, 0)
     create_tree(root, stream, 0, len(stream), indent)
     write_tree(root)
-
     print("[INFO] Created directory tree:")
-
     show_tree(root)
 
 def get_files(dir):
@@ -243,22 +245,6 @@ def usize(bytes):
     else:
         return "{} {}".format(bytes, "Byte")
 
-def excluded(dir):
-    """
-    Returns 'True' if 'dir' should be excluded from search, otherwise 'False'
-
-    Parameters:
-
-        dir
-
-            Directory to check for exclusion.
-    """
-    if exclude_list is not None:
-        basename = os.path.basename(dir)
-        if basename in exclude_list:
-            return True
-    return False
-
 def traverse_tree(file, depth):
     """
     Performs depth-first search on 'root' and prints its contents
@@ -276,7 +262,7 @@ def traverse_tree(file, depth):
     if depth > global_search_depth:
         return
 
-    is_dir = os.path.isdir(file)
+    isdir = os.path.isdir(file)
     string = None
 
     # Show absolute path
@@ -286,27 +272,22 @@ def traverse_tree(file, depth):
         string = os.path.basename(file)
 
     # Show file size
-    if global_show_size:
-        if not is_dir:
-            try:
-                string = string + " {}".format(
-                    usize(os.stat(file).st_size))
-            except OSError:
-                pass
+    if global_show_size and not isdir:
+        try:
+            string = string + " {}".format(usize(os.stat(file).st_size))
+        except OSError:
+            pass
 
-    # Print file
-    if global_hide_dirs and is_dir:
-        pass
+    if global_show_path:
+        print(string + "/" * isdir)
     else:
-        if not global_hide_dirs and not global_show_path:
-            print(" " * depth * rightshift, end = "")
-        print(string + "/" * is_dir)
+        print(" " * depth * rshift + string + "/" * isdir)
 
-    if excluded(file):
+    if os.path.basename(file) in exclude_list:
         return
 
     for file in sorted(get_files(file), key=str):
-        if is_dir:
+        if isdir:
             traverse_tree(file, depth + 1)
 
 def traverse_tree_info(root, depth):
@@ -331,6 +312,8 @@ def traverse_tree_info(root, depth):
     info_max_depth += (depth > info_max_depth)
 
     for file in get_files(root):
+        if os.path.basename(file) in exclude_list:
+            continue
         if os.path.isdir(file):
             traverse_tree_info(file, depth + 1)
         else:
@@ -363,18 +346,16 @@ def print_tree_info(files):
         info_size = 0
         traverse_tree_info(file, 1)
 
-        print(
-            "{}\n    depth: {}, files: {}, size: {}\n".format(
-                os.path.basename(file),
-                info_max_depth,
-                info_num_files,
-                usize(info_size)
-            )
-        )
+        print("{}\n    depth: {}, files: {}, size: {}\n".format(
+            os.path.basename(file),
+            info_max_depth,
+            info_num_files,
+            usize(info_size)
+        ))
 
 def init_argparse():
     """
-    Instantiates the argument parser
+    Initializes the argument parser
     """
     parser = argparse.ArgumentParser()
 
@@ -391,14 +372,6 @@ def init_argparse():
         "-d",
         "--depth",
         type = int,
-        required = False
-    )
-
-    # Exclude directories from output
-    parser.add_argument(
-        "-f",
-        "--files",
-        action = "store_true",
         required = False
     )
 
@@ -457,24 +430,18 @@ if __name__ == "__main__":
         parse_tree_input()
         quit(0)
 
-    global_hide_dirs    = argv.get("files")
-    global_report_depth = argv.get("info")
-    global_show_path    = argv.get("path")
-    global_show_size    = argv.get("size")
-
-    # Show absolute path when excluding directories
-    if global_hide_dirs:
-        global_show_path = global_hide_dirs
+    global_show_path = argv.get("path")
+    global_show_size = argv.get("size")
 
     if argv.get("all"):
         search_pattern = "{0}/* {0}/.*"
     else:
         search_pattern = "{}/*"
 
-    if argv.get("depth") is not None:
+    if argv.get("depth"):
         global_search_depth = argv.get("depth")
 
-    if argv.get("exclude") is not None:
+    if argv.get("exclude"):
         exclude_list = argv.get("exclude").split(",")
 
     files = argv.get("root")
