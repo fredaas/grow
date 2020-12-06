@@ -1,0 +1,21 @@
+Issue 1: Fix [Errno 32] Broken pipe:
+
+    Relevant problem on SO:
+
+        https://stackoverflow.com/questions/14207708/ioerror-errno-32-broken-pipe-python
+
+Issue 2: Fix grow -c incorrect error reporting
+
+    Given the directory structure:
+
+        a
+           b
+              c
+                 hello.txt
+                 world
+                    check1.txt
+                    check2.txt
+
+    Grow creates the correct directory structure but incorrectly reports that it
+    failed to create check1.txt and check2.txt under hello.txt, which shouldn't
+    be possible in the first place.
