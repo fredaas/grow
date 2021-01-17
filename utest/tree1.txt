@@ -1,0 +1,15 @@
+a
+	b
+		hello.txt
+		hello.txt
+		world.txt
+	c
+	d
+		x
+			y
+				z
+	g
+tmp.txt
+e
+	check.txt
+f
