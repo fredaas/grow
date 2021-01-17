@@ -1,0 +1,7 @@
+a
+   b
+      c
+         hello.txt
+         world
+            check1.txt
+            check2.txt
