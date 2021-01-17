@@ -7,143 +7,16 @@ import sys
 import stat
 import argparse
 
-global_show_path    = False
-global_show_size    = False
-global_search_depth = 20
 
-info_max_depth = 0
-info_num_files = 0
-info_size      = 0
+#------------------------------------------------------------------------------
+#
+# Create directory
+#
+#------------------------------------------------------------------------------
 
-exclude_list = []
 
-search_pattern = None
-
-rshift = 4
-
-def indent_factor(s, indent):
-    i = 0
-    while s[i] == " ":
-        i += 1
-    return (int)(i / indent)
-
-class Node:
-    """
-    File node
-
-    name
-
-        File name.
-
-    depth
-
-        File's depth in directory tree.
-
-    index
-
-        File's index in input stream.
-    """
-    def __init__(self, name, depth, index):
-        self.children = []
-        self.parents = []
-        self.name = name.strip()
-        self.depth = depth
-        self.index = index
-        self.error = 0
-
-    def push_parent(self, p):
-        self.parents += p
-
-    def push_child(self, c):
-        self.children.append(c)
-
-def show_tree(root):
-    """
-    Prints tree at 'root'
-
-    Parameters:
-
-        root
-
-            Root node.
-    """
-    if root.depth != 0:
-        print(" " * ((root.depth - 1) * rshift), end = "")
-        print("{} {}".format(root.name, "" if root.error == 0 else "[FAILED]"))
-    for node in root.children:
-        show_tree(node)
-
-def write_tree(root):
-    """
-    Writes tree at 'root'
-
-    Parameters:
-
-        root
-
-            Root node.
-    """
-    if root.depth != 0:
-        relpath = os.path.join(*root.parents, root.name)
-        # This is a file node
-        if "." in root.name:
-            try:
-                abspath = os.path.abspath(relpath)
-                open(abspath, "w")
-            except:
-                root.error = 1
-                print("[INFO] Failed to create the file '{}'"
-                    .format(relpath))
-        # This is directory node
-        else:
-            try:
-                abspath = os.path.abspath(
-                    os.path.join(*root.parents, root.name))
-                os.makedirs(abspath)
-            except:
-                root.error = 1
-                print("[INFO] Failed to create the directory '{}'"
-                    .format(relpath))
-
-    for node in root.children:
-        write_tree(node)
-
-def create_tree(root, stream, start, length, indent):
-    """
-    Builds tree at 'root'
-
-    Parameters:
-
-        root
-
-            Root node.
-
-        stream
-
-            Input list.
-
-        start
-
-            Stream list index.
-
-        length
-
-            Stream length.
-
-        indent
-
-            Indentation factor.
-    """
-    for i in range(start, length):
-        next_name = stream[i]
-        next_depth = indent_factor(next_name, indent) + 1
-        if next_depth == root.depth + 1:
-            node = Node(next_name, next_depth, i)
-            if root.depth > 0:
-                node.push_parent(root.parents + [root.name])
-            root.push_child(node)
-    for child in root.children:
-        create_tree(child, stream, child.index + 1, length, indent)
+stream = ""
+stream_rshift = 0
 
 def valid_indent(stream):
     """
@@ -187,23 +60,94 @@ def valid_indent(stream):
             return -1
     return m
 
-def parse_tree_input():
-    """
-    Creates directory tree from stdin input stream
-    """
+def lspace(s):
+    n = 0
+    i = 0
+    while s[i] == " " or s[i] == "\t":
+        n += 1
+        i += 1
+    return n
+
+def create_tree():
+    global stream
+    global stream_rshift
+
     stream = sys.stdin.read().rstrip().split("\n")
 
-    indent = valid_indent(stream)
+    stream_rshift = valid_indent(stream)
 
-    if indent == -1:
+    if stream_rshift == -1:
         print("[ERROR] Detected alternate indentation levels")
         quit(1)
 
-    root = Node("root", 0, 0)
-    create_tree(root, stream, 0, len(stream), indent)
-    write_tree(root)
-    print("[INFO] Created directory tree:")
-    show_tree(root)
+    grow_tree()
+
+def write_tree_node(path):
+    if "." in path:
+        try:
+            open(os.path.abspath(path), "w")
+        except Exception as e:
+            print("[ERROR]", e)
+    else:
+        try:
+            os.makedirs(os.path.abspath(path))
+        except Exception as e:
+            print("[ERROR]", e)
+
+def grow_tree():
+    print("Creating directory structure...")
+    write_tree_node(stream[0])
+    parents = []
+    j = 0
+    for i in range(1, len(stream)):
+        name_a = stream[i - 1]
+        name_b = stream[i]
+        level_a = lspace(name_a)
+        level_b = lspace(name_b)
+        name_b = name_b.strip()
+        # Next node is a top level node
+        if level_b == 0:
+            parents = []
+            write_tree_node(name_b)
+            continue
+        # Next node is one level down
+        if level_b > level_a:
+            parents.append(name_a.strip())
+            j += 1
+            write_tree_node(os.path.join(*parents, name_b))
+        # Next node is on the same level
+        elif level_b == level_a:
+            if level_b > 0:
+                write_tree_node(os.path.join(*parents, name_b))
+        # Next node is one or more levels up
+        elif (level_b < level_a) and (level_b > 0):
+            k = int((level_a - level_b) / stream_rshift)
+            parents = parents[:-k]
+            j -= k
+            write_tree_node(os.path.join(*parents, name_b))
+    print("Done!")
+
+
+#------------------------------------------------------------------------------
+#
+# Search directory
+#
+#------------------------------------------------------------------------------
+
+
+global_show_path    = False
+global_show_size    = False
+global_search_depth = 20
+
+info_max_depth = 0
+info_num_files = 0
+info_size      = 0
+
+exclude_list = []
+
+search_pattern = None
+
+rshift = 4
 
 def get_files(dir):
     """
@@ -421,7 +365,7 @@ if __name__ == "__main__":
     argv = init_argparse()
 
     if argv["create"]:
-        parse_tree_input()
+        create_tree()
         quit(0)
 
     global_show_path = argv.get("path")
