@@ -18,21 +18,13 @@ import argparse
 stream = ""
 stream_rshift = 0
 
+#
+# Validates input stream indentation levels
+#
+# -1 is returned if the indentation level is not consistent, otherwise the
+# indent coefficient is returned.
+#
 def valid_indent(stream):
-    """
-    Validates input-stream indentation levels
-
-    -1 is returned if alternate indentation levels are detected. Otherwise the
-    indentation level of the first indented element in the stream is returned.
-    If the stream represents a flat directory structure, the indentation level
-    is set to 1.
-
-    Parameters:
-
-        stream
-
-            Input stream.
-    """
     i = 0
     m = None
     for name in stream:
@@ -60,6 +52,9 @@ def valid_indent(stream):
             return -1
     return m
 
+#
+# Returns the number of leading spaces in 's'
+#
 def lspace(s):
     n = 0
     i = 0
@@ -68,6 +63,9 @@ def lspace(s):
         i += 1
     return n
 
+#
+# Top-level routine that reads the input stream and calls 'grow_tree'
+#
 def create_tree():
     global stream
     global stream_rshift
@@ -82,6 +80,9 @@ def create_tree():
 
     grow_tree()
 
+#
+# Writes 'path' to disk
+#
 def write_tree_node(path):
     if "." in path:
         try:
@@ -94,6 +95,9 @@ def write_tree_node(path):
         except Exception as e:
             print("[ERROR]", e)
 
+#
+# Parses the input stream and writes the directory structure to disk
+#
 def grow_tree():
     print("Creating directory structure...")
     write_tree_node(stream[0])
@@ -149,31 +153,19 @@ search_pattern = None
 
 rshift = 4
 
-def get_files(dir):
-    """
-    Returns the contents of 'dir' non-recursively
-
-    Parameters:
-
-        dir
-
-            Directory.
-    """
+#
+# Returns the contents of 'root'
+#
+def get_files(root):
     files = []
-    for target in search_pattern.format(dir).split(" "):
+    for target in search_pattern.format(root).split(" "):
         files.extend(glob.glob(target, recursive = False))
     return files
 
+#
+# Returns the unit size of 'bytes' as a string
+#
 def usize(bytes):
-    """
-    Returns the unit size of 'bytes' as a string
-
-    Parameters:
-
-        bytes
-
-            File size in bytes.
-    """
     if bytes > 1e+9:
         return "{:.1f} {}".format(bytes / 1e+9, "GiB")
     elif bytes > 1e+6:
@@ -183,36 +175,30 @@ def usize(bytes):
     else:
         return "{} {}".format(bytes, "Byte")
 
-def traverse_tree(file, depth):
-    """
-    Performs depth-first search on 'root' and prints its contents
-
-    Parameters:
-
-        file
-
-            File to expand.
-
-        depth
-
-            Maximum search depth.
-    """
+#
+# Performs a recursive depth-first search on 'root' and prints its contents
+#
+# depth
+#
+#     Current search depth
+#
+def traverse_tree(root, depth):
     if depth > global_search_depth:
         return
 
-    isdir = os.path.isdir(file)
+    isdir = os.path.isdir(root)
     string = None
 
     # Show absolute path
     if global_show_path:
-        string = os.path.abspath(file)
+        string = os.path.abspath(root)
     else:
-        string = os.path.basename(file)
+        string = os.path.basename(root)
 
     # Show file size
     if global_show_size and not isdir:
         try:
-            string = string + " {}".format(usize(os.stat(file).st_size))
+            string = string + " {}".format(usize(os.stat(root).st_size))
         except OSError:
             pass
 
@@ -221,28 +207,22 @@ def traverse_tree(file, depth):
     else:
         print(" " * depth * rshift + string + "/" * isdir)
 
-    if os.path.basename(file) in exclude_list:
+    if os.path.basename(root) in exclude_list:
         return
 
-    for file in sorted(get_files(file), key=str):
+    for file in sorted(get_files(root), key=str):
         if isdir:
             traverse_tree(file, depth + 1)
 
+#
+# Performs a recursice depth-first search on 'root' and gather information
+# about the directory structure
+#
+# depth
+#
+#     Current search depth
+#
 def traverse_tree_info(root, depth):
-    """
-    Performs depth-first on 'root' and gathers information about its directory
-    structure
-
-    Parameters:
-
-        root
-
-            Root file.
-
-        depth
-
-            Current search depth.
-    """
     global info_max_depth
     global info_num_files
     global info_size
@@ -261,16 +241,11 @@ def traverse_tree_info(root, depth):
             except OSError:
                 pass
 
+#
+# Top-level routine that calls 'traverse_tree_info' on 'files' and prints the
+# results
+#
 def print_tree_info(files):
-    """
-    Prints directory information
-
-    Parameters:
-
-        files
-
-            Files to include in report.
-    """
     global info_max_depth
     global info_num_files
     global info_size
@@ -292,9 +267,6 @@ def print_tree_info(files):
         ))
 
 def init_argparse():
-    """
-    Initializes the argument parser
-    """
     parser = argparse.ArgumentParser()
 
     # Report directory information
