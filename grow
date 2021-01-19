@@ -121,10 +121,9 @@ def grow_tree():
             write_tree_node(os.path.join(*parents, name_b))
         # Next node is on the same level
         elif level_b == level_a:
-            if level_b > 0:
-                write_tree_node(os.path.join(*parents, name_b))
+            write_tree_node(os.path.join(*parents, name_b))
         # Next node is one or more levels up
-        elif (level_b < level_a) and (level_b > 0):
+        elif level_b < level_a:
             k = int((level_a - level_b) / stream_rshift)
             parents = parents[:-k]
             j -= k
