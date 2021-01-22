@@ -102,7 +102,6 @@ def grow_tree():
     print("Creating directory structure...")
     write_tree_node(stream[0])
     parents = []
-    j = 0
     for i in range(1, len(stream)):
         name_a = stream[i - 1]
         name_b = stream[i]
@@ -117,7 +116,6 @@ def grow_tree():
         # Next node is one level down
         if level_b > level_a:
             parents.append(name_a.strip())
-            j += 1
             write_tree_node(os.path.join(*parents, name_b))
         # Next node is on the same level
         elif level_b == level_a:
@@ -126,7 +124,6 @@ def grow_tree():
         elif level_b < level_a:
             k = int((level_a - level_b) / stream_rshift)
             parents = parents[:-k]
-            j -= k
             write_tree_node(os.path.join(*parents, name_b))
     print("Done!")
 
