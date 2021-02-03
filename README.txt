@@ -17,8 +17,6 @@ The main idea of Grow is to provide a simple, portable tool that efficiently
 visualizes directory-tree structures from the command line. Additionally, Grow
 can
 
-    - display file permissions,
-
     - display absolute paths,
 
     - display file sizes,
