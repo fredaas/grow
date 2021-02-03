@@ -329,25 +329,29 @@ def init_argparse():
 
     return vars(parser.parse_args())
 
+def isset(argv, key):
+    value = argv[key]
+    return (value is not None) and (value is not False)
+
 if __name__ == "__main__":
     argv = init_argparse()
 
-    if argv["create"]:
+    if isset(argv, "create"):
         create_tree()
         quit(0)
 
     global_show_path = argv.get("path")
     global_show_size = argv.get("size")
 
-    if argv.get("all"):
+    if isset(argv, "all"):
         search_pattern = "{0}/* {0}/.*"
     else:
         search_pattern = "{}/*"
 
-    if argv.get("depth"):
+    if isset(argv, "depth"):
         global_search_depth = argv.get("depth")
 
-    if argv.get("exclude"):
+    if isset(argv, "exclude"):
         exclude_list = argv.get("exclude").split(",")
 
     files = argv.get("root")
@@ -357,7 +361,7 @@ if __name__ == "__main__":
 
     files = [ x.rstrip("/") for x in files ]
 
-    if argv.get("info"):
+    if isset(argv, "info"):
         print_tree_info(files)
         quit(0)
 
