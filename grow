@@ -263,7 +263,7 @@ def print_tree_info(files):
         ))
 
 def init_argparse():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(add_help=False)
 
     # Report directory information
     parser.add_argument(
@@ -327,17 +327,80 @@ def init_argparse():
         nargs = "*"
     )
 
+    parser.add_argument(
+        "-h",
+        "--help",
+        action = "store_true",
+        required = False
+    )
+
     return vars(parser.parse_args())
 
 def isset(argv, key):
     value = argv[key]
     return (value is not None) and (value is not False)
 
+def print_help():
+    """USAGE
+
+    grow <options>
+
+OPTIONS
+
+    -h, --help
+        Print this menu.
+
+    -c, --create
+        Create a directory tree.
+
+    -s, --size
+        Show file sizes.
+
+    -p, --path
+        Use absolute paths.
+
+    -a, --all
+        Include dotfiles.
+
+    -e, --exclude <files>
+        Exclude files from search. Multiple files are separate by "," with no
+        space in between.
+
+    -d, --depth <depth>
+        Set search depth limit. The default depth is 20.
+
+    -i, --info
+        Report directory information.
+
+EXAMPLES
+
+    Create a directory tree:
+
+        $ cat << EOF | grow -c
+        > a
+        >     b
+        >         c.txt
+        >         d.txt
+        >     e
+        > f
+        >     g
+        > EOF
+
+    Exclude files from search:
+
+        $ grow -e resources,media
+    """
+    print(print_help.__doc__)
+
 if __name__ == "__main__":
     argv = init_argparse()
 
     if isset(argv, "create"):
         create_tree()
+        quit(0)
+
+    if isset(argv, "help"):
+        print_help()
         quit(0)
 
     global_show_path = argv.get("path")
