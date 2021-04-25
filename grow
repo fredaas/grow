@@ -334,7 +334,27 @@ def init_argparse():
         required = False
     )
 
-    return vars(parser.parse_args())
+    stderr = sys.stderr;
+    stdout = sys.stdout;
+
+    devnull = open(os.devnull, "w")
+    sys.stderr = devnull;
+    sys.stdout = devnull;
+
+    argv, error = None, False
+    try:
+        argv = vars(parser.parse_args())
+    except:
+        error = True
+
+    sys.stderr = stderr;
+    sys.stdout = stdout;
+
+    if error:
+        print("[ERROR] Invalid argument. See 'grow -h' for usage.")
+        quit(1)
+
+    return argv
 
 def isset(argv, key):
     value = argv[key]
