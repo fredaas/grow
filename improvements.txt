@@ -1,5 +1,13 @@
+ISSUES
+-------------------------------------------------------------------------------
+
 Issue 1: Fix [Errno 32] Broken pipe:
 
     Relevant problem on SO:
 
         https://stackoverflow.com/questions/14207708/ioerror-errno-32-broken-pipe-python
+
+REQUESTED FEATURES
+-------------------------------------------------------------------------------
+
+- Only search for directories
