@@ -262,7 +262,41 @@ def print_tree_info(files):
             usize(info_size)
         ))
 
+def parse_args(parser):
+    """
+    Checks if the provided arguments are valid and prints an error message and
+    quits the program if invalid arguments are detected
+
+    Note: This is a hack to circumvent argparse's internal error reports by
+    piping stdout and stderr to /dev/null.
+    """
+    stderr = sys.stderr;
+    stdout = sys.stdout;
+
+    devnull = open(os.devnull, "w")
+    sys.stderr = devnull;
+    sys.stdout = devnull;
+
+    argv, error = None, False
+    try:
+        argv = vars(parser.parse_args())
+    except:
+        error = True
+
+    sys.stderr = stderr;
+    sys.stdout = stdout;
+
+    if error:
+        print("[ERROR] Invalid argument. See 'grow -h' for usage.")
+        quit(1)
+
+    return argv
+
 def init_argparse():
+    """
+    Initializes the argument parser and returns all valid arguments in a
+    dictionary
+    """
     parser = argparse.ArgumentParser(add_help=False)
 
     # Report directory information
@@ -334,27 +368,7 @@ def init_argparse():
         required = False
     )
 
-    stderr = sys.stderr;
-    stdout = sys.stdout;
-
-    devnull = open(os.devnull, "w")
-    sys.stderr = devnull;
-    sys.stdout = devnull;
-
-    argv, error = None, False
-    try:
-        argv = vars(parser.parse_args())
-    except:
-        error = True
-
-    sys.stderr = stderr;
-    sys.stdout = stdout;
-
-    if error:
-        print("[ERROR] Invalid argument. See 'grow -h' for usage.")
-        quit(1)
-
-    return argv
+    return parse_args(parser)
 
 def isset(argv, key):
     value = argv[key]
