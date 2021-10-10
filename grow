@@ -264,11 +264,11 @@ def print_tree_info(files):
 
 def parse_args(parser):
     """
-    Checks if the provided arguments are valid and prints an error message and
-    quits the program if invalid arguments are detected
+Checks if the provided arguments are valid and prints an error message and
+quits the program if invalid arguments are detected
 
-    Note: This is a hack to circumvent argparse's internal error reports by
-    piping stdout and stderr to /dev/null.
+Note: This is a hack to circumvent argparse's internal error reports by
+piping stdout and stderr to /dev/null.
     """
     stderr = sys.stderr;
     stdout = sys.stdout;
@@ -294,8 +294,8 @@ def parse_args(parser):
 
 def init_argparse():
     """
-    Initializes the argument parser and returns all valid arguments in a
-    dictionary
+Initializes the argument parser and returns all valid arguments in a
+dictionary
     """
     parser = argparse.ArgumentParser(add_help=False)
 
@@ -375,7 +375,8 @@ def isset(argv, key):
     return (value is not None) and (value is not False)
 
 def print_help():
-    """USAGE
+    """
+USAGE
 
     grow <options>
 
