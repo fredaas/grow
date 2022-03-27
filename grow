@@ -1,11 +1,45 @@
 #!/usr/bin/env python3
+"""
+Usage:
+    grow [FILES...] [-e <list>] [-d <depth>] [-c] [-s] [-p] [-a] [-i]
+
+Options:
+    FILES...
+        Target files to search.
+
+    -h, --help
+        Prints this menu.
+
+    -c, --create
+        Creates a nested directory structure. Reads input from STDIN.
+
+    -s, --size
+        Displays file sizes.
+
+    -p, --path
+        Displays absolute file paths.
+
+    -a, --all
+        Searches all files, including dotfiles.
+
+    -e, --exclude <list>
+        Excludes directories from the search. Multiple directories are
+        comma-separated.
+
+    -d, --depth <depth>
+        Sets search depth limit. Default is 20 directories.
+
+    -i, --info
+        Prints various information about the provided directory structure.
+
+"""
 
 import glob
 import re
 import os
 import sys
 import stat
-import argparse
+from docopt import docopt
 
 
 #------------------------------------------------------------------------------
@@ -20,10 +54,10 @@ stream_rshift = 0
 
 def valid_indent(stream):
     """
-Validates input stream indentation levels
+    Validates input stream indentation levels
 
--1 is returned if the indentation level is not consistent, otherwise the
-indent coefficient is returned.
+    -1 is returned if the indentation level is not consistent, otherwise the
+    indent coefficient is returned.
     """
     i = 0
     m = None
@@ -54,7 +88,7 @@ indent coefficient is returned.
 
 def lspace(s):
     """
-Returns the number of leading spaces in 's'
+    Returns the number of leading spaces in 's'
     """
     n = 0
     i = 0
@@ -65,7 +99,7 @@ Returns the number of leading spaces in 's'
 
 def create_tree():
     """
-Reads an AST representation from stdin and calls grow_tree
+    Reads an AST representation from stdin and calls grow_tree
     """
     global stream
     global stream_rshift
@@ -82,7 +116,7 @@ Reads an AST representation from stdin and calls grow_tree
 
 def write_tree_node(path):
     """
-Writes 'path' to disk
+    Writes 'path' to disk
     """
     if "." in path:
         try:
@@ -97,7 +131,7 @@ Writes 'path' to disk
 
 def grow_tree():
     """
-Parses the input stream and writes the directory structure to disk
+    Parses the input stream and writes the directory structure to disk
     """
     print("Creating directory structure...")
     write_tree_node(stream[0])
@@ -151,7 +185,7 @@ rshift = 4
 
 def get_files(root):
     """
-Returns the contents of 'root'
+    Returns the contents of 'root'
     """
     files = []
     for target in search_pattern.format(root).split(" "):
@@ -160,7 +194,7 @@ Returns the contents of 'root'
 
 def usize(bytes):
     """
-Returns the unit size of 'bytes' as a string
+    Returns the unit size of 'bytes' as a string
     """
     if bytes > 1e+9:
         return "{:.1f} {}".format(bytes / 1e+9, "GiB")
@@ -173,7 +207,7 @@ Returns the unit size of 'bytes' as a string
 
 def traverse_tree(root, depth=0):
     """
-Performs a recursive depth-first search on 'root' and prints its contents
+    Performs a recursive depth-first search on 'root' and prints its contents
     """
     if depth > global_search_depth:
         return
@@ -208,8 +242,8 @@ Performs a recursive depth-first search on 'root' and prints its contents
 
 def traverse_tree_info(root, depth=1):
     """
-Performs a recursive depth-first search on 'root' and gathers information about
-the directory structure
+    Performs a recursive depth-first search on 'root' and gathers information about
+    the directory structure
     """
     global info_max_depth
     global info_num_files
@@ -231,7 +265,7 @@ the directory structure
 
 def print_tree_info(files):
     """
-Calls traverse_tree_info and prints the results
+    Calls traverse_tree_info and prints the results
     """
     global info_max_depth
     global info_num_files
@@ -255,11 +289,11 @@ Calls traverse_tree_info and prints the results
 
 def parse_args(parser):
     """
-Checks if the provided arguments are valid and prints an error message and
-quits the program if invalid arguments are detected
+    Checks if the provided arguments are valid and prints an error message and
+    quits the program if invalid arguments are detected
 
-Note: This is a hack to circumvent argparse's internal error reports by
-piping stdout and stderr to /dev/null.
+    Note: This is a hack to circumvent argparse's internal error reports by
+    piping stdout and stderr to /dev/null.
     """
     stderr = sys.stderr;
     stdout = sys.stdout;
@@ -283,174 +317,35 @@ piping stdout and stderr to /dev/null.
 
     return argv
 
-def init_argparse():
-    """
-Initializes the argument parser and returns all valid arguments in a
-dictionary
-    """
-    parser = argparse.ArgumentParser(add_help=False)
-
-    # Report directory information
-    parser.add_argument(
-        "-i",
-        "--info",
-        action = "store_true",
-        required = False
-    )
-
-    # Maximum search depth
-    parser.add_argument(
-        "-d",
-        "--depth",
-        type = int,
-        required = False
-    )
-
-    # Exclude files
-    parser.add_argument(
-        "-e",
-        "--exclude",
-        type = str,
-        required = False
-    )
-
-    # Include dotfiles in search
-    parser.add_argument(
-        "-a",
-        "--all",
-        action = "store_true",
-        required = False
-    )
-
-    # Expand basenames to absolute path
-    parser.add_argument(
-        "-p",
-        "--path",
-        action = "store_true",
-        required = False
-    )
-
-    # Show file sizes
-    parser.add_argument(
-        "-s",
-        "--size",
-        action = "store_true",
-        required = False
-    )
-
-    # Create directory structure
-    parser.add_argument(
-        "-c",
-        "--create",
-        action = "store_true",
-        required = False
-    )
-
-    # Specify root directories
-    parser.add_argument(
-        "root",
-        nargs = "*"
-    )
-
-    parser.add_argument(
-        "-h",
-        "--help",
-        action = "store_true",
-        required = False
-    )
-
-    return parse_args(parser)
-
-def isset(argv, key):
-    value = argv[key]
-    return (value is not None) and (value is not False)
-
-def print_help():
-    """
-USAGE
-
-    grow <options>
-
-OPTIONS
-
-    -h, --help
-        Print this menu.
-
-    -c, --create
-        Create a directory tree.
-
-    -s, --size
-        Show file sizes.
-
-    -p, --path
-        Use absolute paths.
-
-    -a, --all
-        Include dotfiles.
-
-    -e, --exclude <files>
-        Exclude files from search. Multiple files are separate by "," with no
-        space in between.
-
-    -d, --depth <depth>
-        Set search depth limit. The default depth is 20.
-
-    -i, --info
-        Report directory information.
-
-EXAMPLES
-
-    Create a directory tree:
-
-        $ cat << EOF | grow -c
-        > a
-        >     b
-        >         c.txt
-        >         d.txt
-        >     e
-        > f
-        >     g
-        > EOF
-
-    Exclude files from search:
-
-        $ grow -e resources,media
-    """
-    print(print_help.__doc__)
-
 if __name__ == "__main__":
-    argv = init_argparse()
+    argv = docopt(__doc__, help=True)
 
-    if isset(argv, "create"):
+    if argv["--create"]:
         create_tree()
         quit(0)
 
-    if isset(argv, "help"):
-        print_help()
-        quit(0)
+    global_show_path = argv["--path"]
+    global_show_size = argv["--size"]
 
-    global_show_path = argv.get("path")
-    global_show_size = argv.get("size")
-
-    if isset(argv, "all"):
+    if argv["--all"]:
         search_pattern = "{0}/* {0}/.*"
     else:
         search_pattern = "{}/*"
 
-    if isset(argv, "depth"):
-        global_search_depth = argv.get("depth")
+    if argv["--depth"]:
+        global_search_depth = argv["--depth"]
 
-    if isset(argv, "exclude"):
-        exclude_list = argv.get("exclude").split(",")
+    if argv["--exclude"]:
+        exclude_list = argv["--exclude"].split(",")
 
-    files = argv.get("root")
+    files = argv["FILES"]
 
     if len(files) == 0:
         files = get_files(".")
 
     files = [ x.rstrip("/") for x in files ]
 
-    if isset(argv, "info"):
+    if argv["--info"]:
         print_tree_info(files)
         quit(0)
 
