@@ -31,7 +31,6 @@ Options:
 
     -i, --info
         Prints various information about the provided directory structure.
-
 """
 
 import glob
@@ -286,36 +285,6 @@ def print_tree_info(files):
             info_num_files,
             usize(info_size)
         ))
-
-def parse_args(parser):
-    """
-    Checks if the provided arguments are valid and prints an error message and
-    quits the program if invalid arguments are detected
-
-    Note: This is a hack to circumvent argparse's internal error reports by
-    piping stdout and stderr to /dev/null.
-    """
-    stderr = sys.stderr;
-    stdout = sys.stdout;
-
-    devnull = open(os.devnull, "w")
-    sys.stderr = devnull;
-    sys.stdout = devnull;
-
-    argv, error = None, False
-    try:
-        argv = vars(parser.parse_args())
-    except:
-        error = True
-
-    sys.stderr = stderr;
-    sys.stdout = stdout;
-
-    if error:
-        print("[ERROR] Invalid argument. See 'grow -h' for usage.")
-        quit(1)
-
-    return argv
 
 if __name__ == "__main__":
     argv = docopt(__doc__, help=True)
