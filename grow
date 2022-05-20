@@ -302,7 +302,7 @@ if __name__ == "__main__":
         search_pattern = "{}/*"
 
     if argv["--depth"]:
-        global_search_depth = argv["--depth"]
+        global_search_depth = int(argv["--depth"])
 
     if argv["--exclude"]:
         exclude_list = argv["--exclude"].split(",")
