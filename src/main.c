@@ -44,9 +44,12 @@ int isdir(const char *path)
  */
 char **string_buff_alloc(int size, int length)
 {
-    char **buff = (char **)malloc(sizeof(char *) * size);
-    for (int i = 0; i < size; i++)
-        buff[i] = (char *)malloc(sizeof(char) * length);
+    char **buff = (char **)calloc(size, sizeof(char *));
+    if (length > 0)
+    {
+        for (int i = 0; i < size; i++)
+            buff[i] = (char *)malloc(length * sizeof(char));
+    }
     return buff;
 }
 
@@ -64,21 +67,32 @@ void string_buff_free(char **buff)
     free(buff);
 }
 
+void string_buff_print(char **buff)
+{
+    char *item = NULL;
+    int i = 0;
+    while ((item = buff[i++]) != NULL)
+        printf("%s\n", item);
+}
+
 /**
  * @brief List all files within a directory
  *        sorted in ascending order
  *
- * @param path Absolute path.
+ * @param buff String buffer to store the results.
+ * @param path Absolute path to the directory.
  *
  * @returns A pointer to the allocated string buffer containing the
  *          directory contents.
+ *
+ * @remark It's left up to the caller to free the heap memory
+ *         allocated by this function.
  */
-char **listdir(char *path)
+char **listdir(char **buff, char *path)
 {
     DIR *d = opendir(path);
     if (!d)
         return NULL;
-    char **buff = string_buff_alloc(256, PATH_MAX);
     int i = 0;
     struct dirent *dir;
     while ((dir = readdir(d)) != NULL)
@@ -88,9 +102,9 @@ char **listdir(char *path)
             continue;
         char pathname[PATH_MAX];
         sprintf(pathname, "%s/%s", path, dirname);
+        buff[i] = (char *)malloc(PATH_MAX * sizeof(char));
         strcpy(buff[i++], pathname);
     }
-    strcpy(buff[i], "\0");
     closedir(d);
     qsort(buff, i, sizeof(char *), qsort_string_asc);
     return buff;
@@ -99,11 +113,11 @@ char **listdir(char *path)
 /**
  * @brief Extract the basename from a path
  *
- * If the path ends with a trailing '/', and empty string is
- * returned.
- *
  * @param basename The path basename.
  * @param path     The path to process.
+ *
+ * @remark If the path ends with a trailing '/', and empty string is
+ *         returned.
  */
 void path_basename(char *basename, char *path)
 {
@@ -120,7 +134,7 @@ void path_basename(char *basename, char *path)
  * @param depth The current depth of the abstract tree
  *              created by parsing the directory structure, starting at 0.
  */
-void search(char *path, int depth)
+void print_directory(char *path, int depth)
 {
     char basename[PATH_MAX];
     path_basename(basename, path);
@@ -135,35 +149,68 @@ void search(char *path, int depth)
         return;
     }
 
-    char **buff = listdir(path);
-    char *item = buff[0];
+    char **buff = string_buff_alloc(256, 0);
+
+    listdir(buff, path);
+    char *item = NULL;
     int i = 0;
-    while (item[0] != '\0')
-    {
-        search(item, depth + 1);
-        item = buff[++i];
-    }
+    while ((item = buff[i++]) != NULL)
+        print_directory(item, depth + 1);
+
     string_buff_free(buff);
+}
+
+void parse_directory(char **buff)
+{
+    char *item = NULL;
+    int i = 0;
+    while ((item = buff[i++]) != NULL)
+    {
+        char *path = realpath(item, NULL);
+        print_directory(path, 0);
+        free(path);
+    }
+}
+
+/**
+ * Parse file arguments from the command line
+ *
+ * @param argc Argument count.
+ * @param argv Arguments.
+ *
+ * @remark It's left up to the caller to free the heap memory
+ *         allocated by this function.
+ */
+char **parse_argv(int argc, char **argv)
+{
+    char **buff = string_buff_alloc(256, 0);
+    if (argc == 1)
+    {
+        char *path = realpath(".", NULL);
+        listdir(buff, path);
+    }
+    else
+    {
+        char *item = NULL;
+        int i = 1;
+        int j = 0;
+        while ((item = argv[i++]) != NULL)
+        {
+            buff[j] = (char *)malloc(PATH_MAX * sizeof(char));
+            strcpy(buff[j++], item);
+        }
+        buff[j] = NULL;
+    }
+    return buff;
 }
 
 int main(int argc, char **argv)
 {
-    argc--;
+    char **buff = parse_argv(argc, argv);
 
-    if (argc == 0)
-    {
-        printf("[ERROR] Please provide a directory as argument.");
-        exit(1);
-    }
+    parse_directory(buff);
 
-    char path[256];
-    strcpy(path, argv[1]);
-
-    char *abspath = realpath(path, NULL);
-
-    search(abspath, 0);
-
-    free(abspath);
+    string_buff_free(buff);
 
     return 0;
 }
