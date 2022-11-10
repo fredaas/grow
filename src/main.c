@@ -160,6 +160,12 @@ void print_directory(char *path, int depth)
     string_buff_free(buff);
 }
 
+/**
+ * @brief Recursively print the contents of all directories
+ *        passed as argument
+ *
+ * @param buff String buffer containg file arguments.
+ */
 void parse_directory(char **buff)
 {
     char *item = NULL;
@@ -173,7 +179,7 @@ void parse_directory(char **buff)
 }
 
 /**
- * Parse file arguments from the command line
+ * @brief Parse file arguments from the command line
  *
  * @param argc Argument count.
  * @param argv Arguments.
