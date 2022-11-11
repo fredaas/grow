@@ -8,6 +8,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#define max(a, b) ((a) >= (b) ? (a) : (b))
+
 /**
  * @brief Comparison function for sorting a
  *        2D array of strings in ascending order
@@ -210,13 +212,172 @@ char **parse_argv(int argc, char **argv)
     return buff;
 }
 
+int readline(char *buff)
+{
+    char c;
+    int i = 0;
+    while ((c = fgetc(stdin)) != EOF)
+    {
+        if (c == '\n')
+            break;
+        buff[i++] = c;
+    }
+    buff[i] = '\0';
+    return c != EOF;
+}
+
+typedef struct StringStack StringStack;
+
+struct StringStack {
+    int head;
+    int max_size;
+    char items[256][PATH_MAX];
+};
+
+StringStack *stack_init(void)
+{
+    StringStack *stack = (StringStack *)malloc(sizeof(StringStack));
+    stack->head = 0;
+    stack->max_size = 256;
+    for (int i = 0; i < stack->max_size; i++)
+        stack->items[i][0] = '\0';
+    return stack;
+}
+
+void stack_push(StringStack *stack, char *value)
+{
+    /* We've reached the stack limit */
+    if (stack->head == stack->max_size)
+        return;
+    strcpy(stack->items[stack->head++], value);
+}
+
+void stack_delete(StringStack *stack, int delta)
+{
+    /* We're trying to delete items that doesn't exist */
+    if (stack->head - delta < 0)
+        return;
+    stack->head -= delta;
+    stack->items[stack->head][0] = '\0';
+}
+
+void stack_flush(StringStack *stack)
+{
+    stack->head = 0;
+    stack->items[stack->head][0] = '\0';
+}
+
+void stack_print(StringStack *stack)
+{
+    int i = stack->head;
+    while (--i >= 0)
+        printf("%s\n", stack->items[i]);
+}
+
+void stack_join(StringStack *stack, char *buff)
+{
+    int i = 0;
+    while (i < stack->head)
+    {
+        char name[PATH_MAX];
+        sprintf(name, "%s/", stack->items[i]);
+        strcat(buff, name);
+        i++;
+    }
+    /* Remove trailing slash */
+    buff[max(0, strlen(buff) - 1)] = '\0';
+}
+
+int string_indent(char *s)
+{
+    int i = 0;
+    while (s[i++] == ' ');
+    return i - 1;
+}
+
+int string_contains(char *s, char symbol)
+{
+    char c;
+    int i = 0;
+    while ((c = s[i++]) != '\0')
+    {
+        if (c == symbol)
+            return 1;
+    }
+    return 0;
+}
+
+void string_strip(char *s, char *token)
+{
+    char buff[PATH_MAX];
+    strcpy(buff, s);
+    int size = strlen(buff);
+    if (!size)
+        return;
+    int j = size - 1;
+    while (j >= 0 && string_contains(token, buff[j]))
+        j--;
+    buff[j + 1] = '\0';
+    int i = 0;
+    while (i < j && string_contains(token, buff[i]))
+        i++;
+    strcpy(s, buff + i);
+}
+
+void tree_parse_notation(void)
+{
+    StringStack *stack = stack_init();
+    char curr[PATH_MAX];
+    char prev[PATH_MAX];
+    char path[PATH_MAX];
+    while (readline(curr))
+    {
+        int indent  = string_indent(curr);
+        string_strip(curr, " ");
+        /* This node is a root level node */
+        if (indent == 0)
+        {
+            stack_flush(stack);
+            printf("%s\n", curr);
+        }
+        /* This node is one level down from the previous, store its parent */
+        else if (indent - stack->head > 0)
+        {
+            stack_push(stack, prev);
+            stack_join(stack, path);
+            printf("%s/%s\n", path, curr);
+        }
+        /* This node is on the same level as the previous */
+        else if (indent - stack->head == 0)
+        {
+            stack_join(stack, path);
+            printf("%s/%s\n", path, curr);
+        }
+        /* This node is one or more levels up from the previous */
+        else
+        {
+            stack_delete(stack, stack->head - indent);
+            stack_join(stack, path);
+            printf("%s/%s\n", path, curr);
+        }
+        memset(path, 0, PATH_MAX * sizeof(char));
+        strcpy(prev, curr);
+    }
+    free(stack);
+}
+
+void create_tree(void)
+{
+    tree_parse_notation();
+}
+
 int main(int argc, char **argv)
 {
     char **buff = parse_argv(argc, argv);
-
     parse_directory(buff);
-
     string_buff_free(buff);
+
+    // create_tree();
 
     return 0;
 }
