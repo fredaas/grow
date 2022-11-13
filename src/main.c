@@ -9,6 +9,48 @@
 #include <unistd.h>
 
 #define max(a, b) ((a) >= (b) ? (a) : (b))
+#define min(a, b) ((a) <= (b) ? (a) : (b))
+
+int LOG_LEVEL = 2;
+
+#define LOG_TYPE_DEBUG   4
+#define LOG_TYPE_INFO    3
+#define LOG_TYPE_WARNING 2
+#define LOG_TYPE_ERROR   1
+
+char *log_label[] = {
+    [LOG_TYPE_DEBUG]   = "DEBUG",
+    [LOG_TYPE_INFO]    = "INFO",
+    [LOG_TYPE_WARNING] = "WARNING",
+    [LOG_TYPE_ERROR]   = "ERROR",
+};
+
+#define LOG_ERROR(...) log_message(LOG_TYPE_ERROR, __FILE__, __LINE__, __VA_ARGS__)
+#define LOG_INFO(...) log_message(LOG_TYPE_INFO, __FILE__, __LINE__, __VA_ARGS__)
+#define LOG_WARNING(...) log_message(LOG_TYPE_WARNING, __FILE__, __LINE__, __VA_ARGS__)
+#define LOG_DEBUG(...) log_message(LOG_TYPE_DEBUG, __FILE__, __LINE__, __VA_ARGS__)
+
+void log_message(int type, char *filename, int lineno, const char *message, ...)
+{
+    if (type > LOG_LEVEL)
+        return;
+    va_list argptr;
+    va_start(argptr, message);
+    char buff[1024];
+    sprintf(buff, "%s - %s - %d - %s\n", filename, log_label[type], lineno, message);
+    vfprintf(stdout, buff, argptr);
+    va_end(argptr);
+}
+
+void log_set_level(void)
+{
+    char *value = getenv("LOG_LEVEL");
+    if (value)
+    {
+        LOG_LEVEL = atoi(value);
+        LOG_LEVEL = min(LOG_LEVEL, LOG_TYPE_DEBUG);
+    }
+}
 
 /**
  * @brief Comparison function for sorting a
@@ -350,7 +392,7 @@ void string_assert_indent(char *s)
         if ((indent % base_indent != 0) ||
             ((indent - prev_indent) > base_indent))
         {
-            printf("[ERROR] Inconsistent indentation.\n");
+            LOG_ERROR("Inconsistent indentation.");
             exit(1);
         }
     }
@@ -423,14 +465,16 @@ void string_buff_parse(char **buff)
 
 int main(int argc, char **argv)
 {
-    // char **buff = string_buff_alloc(256, 0);
-    // string_buff_stream(buff, stdin);
-    // string_buff_print(buff);
-    // string_buff_parse(buff);
+    log_set_level();
 
-    char **buff = parse_argv(argc, argv);
-    parse_directory(buff);
-    string_buff_free(buff);
+    char **buff = string_buff_alloc(256, 0);
+    string_buff_stream(buff, stdin);
+    string_buff_print(buff);
+    string_buff_parse(buff);
+
+    // char **buff = parse_argv(argc, argv);
+    // parse_directory(buff);
+    // string_buff_free(buff);
 
     return 0;
 }
