@@ -212,11 +212,11 @@ char **parse_argv(int argc, char **argv)
     return buff;
 }
 
-int readline(char *buff)
+int string_readline(char *buff, FILE *stream)
 {
     char c;
     int i = 0;
-    while ((c = fgetc(stdin)) != EOF)
+    while ((c = fgetc(stream)) != EOF)
     {
         if (c == '\n')
             break;
@@ -324,6 +324,18 @@ void string_strip(char *s, char *token)
     strcpy(s, buff + i);
 }
 
+int string_isempty(char *s)
+{
+    char c;
+    int i = 0;
+    while ((c = s[i++]) != '\0')
+    {
+        if ((c != ' ') && (c != '\t') && (c != '\n'))
+            return 0;
+    }
+    return 1;
+}
+
 int base_indent = 0;
 
 void string_assert_indent(char *s)
@@ -351,12 +363,14 @@ void string_assert_indent(char *s)
     prev_indent = indent;
 }
 
-void read_stream(char **buff)
+void string_buff_stream(char **buff, FILE *stream)
 {
     char line[PATH_MAX];
     int i = 0;
-    while (readline(line))
+    while (string_readline(line, stream))
     {
+        if (string_isempty(line))
+            continue;
         string_assert_indent(line);
         buff[i] = (char *)malloc(PATH_MAX * sizeof(char));
         strcpy(buff[i], line);
@@ -364,7 +378,7 @@ void read_stream(char **buff)
     }
 }
 
-void tree_parse_buff(char **buff)
+void string_buff_parse(char **buff)
 {
     StringStack *stack = stack_init();
     char path[PATH_MAX];
@@ -409,14 +423,14 @@ void tree_parse_buff(char **buff)
 
 int main(int argc, char **argv)
 {
-    char **buff = string_buff_alloc(256, 0);
-    read_stream(buff);
+    // char **buff = string_buff_alloc(256, 0);
+    // string_buff_stream(buff, stdin);
+    // string_buff_print(buff);
+    // string_buff_parse(buff);
 
-    // char **buff = parse_argv(argc, argv);
-    // parse_directory(buff);
-    // string_buff_free(buff);
-
-    tree_parse_buff(buff);
+    char **buff = parse_argv(argc, argv);
+    parse_directory(buff);
+    string_buff_free(buff);
 
     return 0;
 }
