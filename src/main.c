@@ -324,60 +324,99 @@ void string_strip(char *s, char *token)
     strcpy(s, buff + i);
 }
 
-void tree_parse_notation(void)
+int base_indent = 0;
+
+void string_assert_indent(char *s)
+{
+    static int prev_indent = 0;
+
+    int indent = string_indent(s);
+
+    /* Check if indentation is consistent */
+    if (base_indent > 0)
+    {
+        if ((indent % base_indent != 0) ||
+            ((indent - prev_indent) > base_indent))
+        {
+            printf("[ERROR] Inconsistent indentation.\n");
+            exit(1);
+        }
+    }
+    /* Store base indentation */
+    else if (indent > 0)
+    {
+        base_indent = indent;
+    }
+
+    prev_indent = indent;
+}
+
+void read_stream(char **buff)
+{
+    char line[PATH_MAX];
+    int i = 0;
+    while (readline(line))
+    {
+        string_assert_indent(line);
+        buff[i] = (char *)malloc(PATH_MAX * sizeof(char));
+        strcpy(buff[i], line);
+        i++;
+    }
+}
+
+void tree_parse_buff(char **buff)
 {
     StringStack *stack = stack_init();
-    char curr[PATH_MAX];
-    char prev[PATH_MAX];
     char path[PATH_MAX];
-    while (readline(curr))
+    char parent[PATH_MAX];
+    char *item;
+    int i = 0;
+    while ((item = buff[i++]) != NULL)
     {
-        int indent  = string_indent(curr);
-        string_strip(curr, " ");
+        int indent = string_indent(item);
+        string_strip(item, " ");
         /* This node is a root level node */
         if (indent == 0)
         {
             stack_flush(stack);
-            printf("%s\n", curr);
+            printf("%s\n", item);
         }
         /* This node is one level down from the previous, store its parent */
         else if (indent - stack->head > 0)
         {
-            stack_push(stack, prev);
+            stack_push(stack, parent);
             stack_join(stack, path);
-            printf("%s/%s\n", path, curr);
+            printf("%s/%s\n", path, item);
         }
         /* This node is on the same level as the previous */
         else if (indent - stack->head == 0)
         {
             stack_join(stack, path);
-            printf("%s/%s\n", path, curr);
+            printf("%s/%s\n", path, item);
         }
         /* This node is one or more levels up from the previous */
         else
         {
-            stack_delete(stack, stack->head - indent);
+            stack_delete(stack, (stack->head - indent) / base_indent);
             stack_join(stack, path);
-            printf("%s/%s\n", path, curr);
+            printf("%s/%s\n", path, item);
         }
         memset(path, 0, PATH_MAX * sizeof(char));
-        strcpy(prev, curr);
+        strcpy(parent, item);
     }
     free(stack);
 }
 
-void create_tree(void)
-{
-    tree_parse_notation();
-}
-
 int main(int argc, char **argv)
 {
-    char **buff = parse_argv(argc, argv);
-    parse_directory(buff);
-    string_buff_free(buff);
+    char **buff = string_buff_alloc(256, 0);
+    read_stream(buff);
 
-    // create_tree();
+    // char **buff = parse_argv(argc, argv);
+    // parse_directory(buff);
+    // string_buff_free(buff);
+
+    tree_parse_buff(buff);
 
     return 0;
 }
