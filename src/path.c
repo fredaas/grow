@@ -7,17 +7,16 @@
  *
  * @returns 1 if the file is a directory, otherwise 0.
  */
-int isdir(const char *path)
+int path_isdir(const char *path)
 {
     struct stat sb;
     return (stat(path, &sb) == 0) && S_ISDIR(sb.st_mode);
 }
 
 /**
- * @brief List all files within a directory
- *        sorted in ascending order
+ * @brief List all files within a directory sorted in ascending order
  *
- * @param buff String buffer to store the results.
+ * @param buff Buffer to store the results.
  * @param path Absolute path to the directory.
  *
  * @returns A pointer to the allocated string buffer containing the
@@ -26,7 +25,7 @@ int isdir(const char *path)
  * @remark It's left up to the caller to free the heap memory
  *         allocated by this function.
  */
-char **listdir(char **buff, char *path)
+char **path_listdir(char **buff, char *path)
 {
     DIR *d = opendir(path);
     if (!d)
@@ -44,15 +43,15 @@ char **listdir(char **buff, char *path)
         strcpy(buff[i++], pathname);
     }
     closedir(d);
-    qsort(buff, i, sizeof(char *), sort_2dchar_asc);
+    qsort(buff, i, sizeof(char *), sort_string_buff_asc);
     return buff;
 }
 
 /**
  * @brief Extract the basename from a path
  *
- * @param basename The path basename.
- * @param path     The path to process.
+ * @param basename Buffer to store the result.
+ * @param path     Path to process.
  *
  * @remark If the path ends with a trailing '/', and empty string is
  *         returned.
@@ -68,16 +67,16 @@ void path_basename(char *basename, char *path)
 /**
  * @brief Perform a DFS search on a directory
  *
- * @param path  The absolute path to the file.
- * @param depth The current depth of the abstract tree
- *              created by parsing the directory structure, starting at 0.
+ * @param path  Absolute path to the directory.
+ * @param depth Current depth of the abstract tree created 
+ *              by parsing the directory structure, starting at 0.
  */
-void print_directory(char *path, int depth)
+void path_print_directory(char *path, int depth)
 {
     char basename[PATH_MAX];
     path_basename(basename, path);
 
-    if (isdir(path))
+    if (path_isdir(path))
     {
         printf("%*s%s/\n", depth * 4, "", basename);
     }
@@ -89,29 +88,87 @@ void print_directory(char *path, int depth)
 
     char **buff = string_buff_alloc(256, 0);
 
-    listdir(buff, path);
+    path_listdir(buff, path);
     char *item = NULL;
     int i = 0;
     while ((item = buff[i++]) != NULL)
-        print_directory(item, depth + 1);
+        path_print_directory(item, depth + 1);
 
     string_buff_free(buff);
 }
 
 /**
- * @brief Recursively print the contents of all directories
- *        passed as argument
- *
- * @param buff String buffer containg file arguments.
+ * @brief Read an input stream into a buffer
+ * 
+ * @param buff    Buffer to store the result.
+ * @param stream  Input stream.
+ * 
+ * @remark It's left up to the caller to free the heap memory
+ *         allocated by this function.
  */
-void parse_directory(char **buff)
+StringInfo *path_read_stream(char **buff, FILE *stream)
 {
-    char *item = NULL;
+    StringInfo *sinfo = (StringInfo *)calloc(1, sizeof(StringInfo));
+    char line[PATH_MAX];
+    int i = 0;
+    while (string_readline(line, stream))
+    {
+        if (string_isempty(line))
+            continue;
+        string_assert_indent(line, sinfo);
+        buff[i] = (char *)malloc(PATH_MAX * sizeof(char));
+        strcpy(buff[i], line);
+        i++;
+    }
+    return sinfo;
+}
+
+/**
+ * @brief Create a directory structure from an AST representation
+ * 
+ * @param buff  AST representation.
+ * @param sinfo StringInfo struct.
+ */
+void path_create_directory(char **buff, StringInfo *sinfo)
+{
+    StringStack *stack = stack_init();
+    char path[PATH_MAX];
+    char parent[PATH_MAX];
+    char *item;
     int i = 0;
     while ((item = buff[i++]) != NULL)
     {
-        char *path = realpath(item, NULL);
-        print_directory(path, 0);
-        free(path);
+        /* Normalize indent */
+        int indent = string_indent(item) / sinfo->base_indent;
+        string_strip(item, " ");
+        /* This node is a root level node */
+        if (indent == 0)
+        {
+            stack_flush(stack);
+            printf("%s\n", item);
+        }
+        /* This node is one level down from the previous, store its parent */
+        else if (indent - stack->head > 0)
+        {
+            stack_push(stack, parent);
+            stack_join(stack, path);
+            printf("%s/%s\n", path, item);
+        }
+        /* This node is on the same level as the previous */
+        else if (indent - stack->head == 0)
+        {
+            stack_join(stack, path);
+            printf("%s/%s\n", path, item);
+        }
+        /* This node is one or more levels up from the previous */
+        else
+        {
+            stack_delete(stack, stack->head - indent);
+            stack_join(stack, path);
+            printf("%s/%s\n", path, item);
+        }
+        memset(path, 0, PATH_MAX * sizeof(char));
+        strcpy(parent, item);
     }
+    free(stack);
 }

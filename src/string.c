@@ -3,8 +3,8 @@
 /**
  * @brief Allocate a string buffer
  *
- * @param size   The number of strings to allocate.
- * @param length The length of each string.
+ * @param size   Number of strings to allocate.
+ * @param length Length of each string.
  *
  * @returns A pointer to the allocated string buffer.
  */
@@ -22,7 +22,7 @@ char **string_buff_alloc(int size, int length)
 /**
  * @brief Deallocate a string buffer
  *
- * @param buff The buffer to deallocate.
+ * @param buff Buffer to deallocate.
  */
 void string_buff_free(char **buff)
 {
@@ -33,6 +33,11 @@ void string_buff_free(char **buff)
     free(buff);
 }
 
+/**
+ * @brief Print a string buffer
+ * 
+ * @param buff Buffer to print.
+ */
 void string_buff_print(char **buff)
 {
     char *item = NULL;
@@ -41,6 +46,14 @@ void string_buff_print(char **buff)
         printf("%s\n", item);
 }
 
+/**
+ * @brief Read a single line from an input stream
+ * 
+ * @param buff   Buffer to store the result.
+ * @param stream Input stream.
+ * 
+ * @returns 0 if EOF is reached, otherwise 1.
+ */
 int string_readline(char *buff, FILE *stream)
 {
     char c;
@@ -55,6 +68,11 @@ int string_readline(char *buff, FILE *stream)
     return c != EOF;
 }
 
+/**
+ * @Initialize a string stack
+ * 
+ * @returns A pointer to the StringStack struct.
+ */
 StringStack *stack_init(void)
 {
     StringStack *stack = (StringStack *)malloc(sizeof(StringStack));
@@ -65,6 +83,12 @@ StringStack *stack_init(void)
     return stack;
 }
 
+/**
+ * @brief Push a value on the stack
+ * 
+ * @param stack Stack pointer.
+ * @param value Value to push on the stack.
+ */
 void stack_push(StringStack *stack, char *value)
 {
     /* We've reached the stack limit */
@@ -73,6 +97,12 @@ void stack_push(StringStack *stack, char *value)
     strcpy(stack->items[stack->head++], value);
 }
 
+/**
+ * @brief Delete values from the top of the stack
+ * 
+ * @param stack Stack pointer.
+ * @param delta Number of elements to delete from the stack.
+ */
 void stack_delete(StringStack *stack, int delta)
 {
     /* We're trying to delete items that doesn't exist */
@@ -82,12 +112,22 @@ void stack_delete(StringStack *stack, int delta)
     stack->items[stack->head][0] = '\0';
 }
 
+/**
+ * @brief Empty the stack
+ * 
+ * @param stack Stack pionter.
+ */
 void stack_flush(StringStack *stack)
 {
     stack->head = 0;
     stack->items[stack->head][0] = '\0';
 }
 
+/**
+ * @brief Print the stack contents
+ * 
+ * @param stack Stack pointer.
+ */
 void stack_print(StringStack *stack)
 {
     int i = stack->head;
@@ -95,6 +135,12 @@ void stack_print(StringStack *stack)
         printf("%s\n", stack->items[i]);
 }
 
+/**
+ * @brief Join all stack items into a string separated by '/'
+ * 
+ * @param stack Stack pointer.
+ * @param buff  Buffer to store the result.
+ */
 void stack_join(StringStack *stack, char *buff)
 {
     int i = 0;
@@ -109,6 +155,13 @@ void stack_join(StringStack *stack, char *buff)
     buff[max(0, strlen(buff) - 1)] = '\0';
 }
 
+/**
+ * @brief Calculate the indentation of a string
+ * 
+ * @param s String.
+ * 
+ * @returns The string indentation.
+ */
 int string_indent(char *s)
 {
     int i = 0;
@@ -116,19 +169,33 @@ int string_indent(char *s)
     return i - 1;
 }
 
-int string_contains(char *s, char symbol)
+/**
+ * @brief Check if a string contains an item
+ * 
+ * @param s    String.
+ * @param item Item to check for.
+ * 
+ * @returns 1 if the item exists, otherwise 0.
+ */
+int string_contains(char *s, char item)
 {
     char c;
     int i = 0;
     while ((c = s[i++]) != '\0')
     {
-        if (c == symbol)
+        if (c == item)
             return 1;
     }
     return 0;
 }
 
-void string_strip(char *s, char *token)
+/**
+ * @brief Strip items from a string
+ * 
+ * @param s     String.
+ * @param items Items to remove from the string.
+ */
+void string_strip(char *s, char *items)
 {
     char buff[PATH_MAX];
     strcpy(buff, s);
@@ -136,15 +203,22 @@ void string_strip(char *s, char *token)
     if (!size)
         return;
     int j = size - 1;
-    while (j >= 0 && string_contains(token, buff[j]))
+    while (j >= 0 && string_contains(items, buff[j]))
         j--;
     buff[j + 1] = '\0';
     int i = 0;
-    while (i < j && string_contains(token, buff[i]))
+    while (i < j && string_contains(items, buff[i]))
         i++;
     strcpy(s, buff + i);
 }
 
+/**
+ * @brief Check if a string is empty
+ * 
+ * @param s String.
+ * 
+ * @returns 1 if the string is empty, otherwise 0.
+ */
 int string_isempty(char *s)
 {
     char c;
@@ -157,7 +231,13 @@ int string_isempty(char *s)
     return 1;
 }
 
-void string_assert_indent(StringInfo *sinfo, char *s)
+/**
+ * @brief Check for inconsistent string indentation
+ * 
+ * @param s     String.
+ * @param sinfo StringInfo struct.
+ */
+void string_assert_indent(char *s, StringInfo *sinfo)
 {
     int indent = string_indent(s);
     if (sinfo->base_indent > 0)
