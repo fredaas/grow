@@ -49,7 +49,8 @@ void string_buff_parse(char **buff)
     int i = 0;
     while ((item = buff[i++]) != NULL)
     {
-        int indent = string_indent(item);
+        /* Normalize indent */
+        int indent = string_indent(item) / sinfo.base_indent;
         string_strip(item, " ");
         /* This node is a root level node */
         if (indent == 0)
@@ -73,7 +74,7 @@ void string_buff_parse(char **buff)
         /* This node is one or more levels up from the previous */
         else
         {
-            stack_delete(stack, (stack->head - indent) / sinfo.base_indent);
+            stack_delete(stack, stack->head - indent);
             stack_join(stack, path);
             printf("%s/%s\n", path, item);
         }
@@ -87,14 +88,14 @@ int main(int argc, char **argv)
 {
     log_set_level();
 
-    // char **buff = string_buff_alloc(256, 0);
-    // string_buff_stream(buff, stdin);
-    // string_buff_print(buff);
-    // string_buff_parse(buff);
+    char **buff = string_buff_alloc(256, 0);
+    string_buff_stream(buff, stdin);
+    string_buff_print(buff);
+    string_buff_parse(buff);
 
-    char **buff = parse_argv(argc, argv);
-    parse_directory(buff);
-    string_buff_free(buff);
+    // char **buff = parse_argv(argc, argv);
+    // parse_directory(buff);
+    // string_buff_free(buff);
 
     return 0;
 }
